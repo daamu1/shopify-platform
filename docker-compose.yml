@@ -1,0 +1,135 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: shopify-redis
+    ports:
+      - "6379:6379"
+
+  service-registry:
+    build:
+      context: .
+      args:
+        SERVICE: service-registry
+    image: shopify/service-registry:local
+    container_name: shopify-service-registry
+    ports:
+      - "8761:8761"
+
+  config-server:
+    build:
+      context: .
+      args:
+        SERVICE: ConfigServer
+    image: shopify/config-server:local
+    container_name: shopify-config-server
+    ports:
+      - "9296:9296"
+    environment:
+      EUREKA_SERVER_ADDRESS: http://service-registry:8761/eureka
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://service-registry:8761/eureka
+    depends_on:
+      - service-registry
+
+  product-service:
+    build:
+      context: .
+      args:
+        SERVICE: ProductService
+    image: shopify/product-service:local
+    container_name: shopify-product-service
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_CONFIG_IMPORT: configserver:http://config-server:9296
+      SPRING_DATASOURCE_URL: jdbc:mysql://${DB_HOST:-host.docker.internal}:${DB_PORT:-3306}/productdb
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-damu}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-password123}
+      EUREKA_SERVER_ADDRESS: http://service-registry:8761/eureka
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://service-registry:8761/eureka
+      ZIPKIN_ENABLED: ${ZIPKIN_ENABLED:-false}
+      ZIPKIN_ENDPOINT: ${ZIPKIN_ENDPOINT:-http://zipkin:9411/api/v2/spans}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  payment-service:
+    build:
+      context: .
+      args:
+        SERVICE: PaymentService
+    image: shopify/payment-service:local
+    container_name: shopify-payment-service
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_CONFIG_IMPORT: configserver:http://config-server:9296
+      SPRING_DATASOURCE_URL: jdbc:mysql://${DB_HOST:-host.docker.internal}:${DB_PORT:-3306}/paymentdb
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-damu}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-password123}
+      EUREKA_SERVER_ADDRESS: http://service-registry:8761/eureka
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://service-registry:8761/eureka
+      ZIPKIN_ENABLED: ${ZIPKIN_ENABLED:-false}
+      ZIPKIN_ENDPOINT: ${ZIPKIN_ENDPOINT:-http://zipkin:9411/api/v2/spans}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  order-service:
+    build:
+      context: .
+      args:
+        SERVICE: OrderService
+    image: shopify/order-service:local
+    container_name: shopify-order-service
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_CONFIG_IMPORT: configserver:http://config-server:9296
+      SPRING_DATASOURCE_URL: jdbc:mysql://${DB_HOST:-host.docker.internal}:${DB_PORT:-3306}/orderdb
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-damu}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-password123}
+      EUREKA_SERVER_ADDRESS: http://service-registry:8761/eureka
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://service-registry:8761/eureka
+      ZIPKIN_ENABLED: ${ZIPKIN_ENABLED:-false}
+      ZIPKIN_ENDPOINT: ${ZIPKIN_ENDPOINT:-http://zipkin:9411/api/v2/spans}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  user-service:
+    build:
+      context: .
+      args:
+        SERVICE: UserService
+    image: shopify/user-service:local
+    container_name: shopify-user-service
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_CONFIG_IMPORT: configserver:http://config-server:9296
+      SPRING_DATASOURCE_URL: jdbc:mysql://${DB_HOST:-host.docker.internal}:${DB_PORT:-3306}/userdb
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-damu}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-password123}
+      EUREKA_SERVER_ADDRESS: http://service-registry:8761/eureka
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://service-registry:8761/eureka
+      ZIPKIN_ENABLED: ${ZIPKIN_ENABLED:-false}
+      ZIPKIN_ENDPOINT: ${ZIPKIN_ENDPOINT:-http://zipkin:9411/api/v2/spans}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  cloud-gateway:
+    build:
+      context: .
+      args:
+        SERVICE: CloudGateway
+    image: shopify/cloud-gateway:local
+    container_name: shopify-cloud-gateway
+    ports:
+      - "9090:9090"
+    environment:
+      SPRING_CONFIG_IMPORT: configserver:http://config-server:9296
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      EUREKA_SERVER_ADDRESS: http://service-registry:8761/eureka
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://service-registry:8761/eureka
+      ZIPKIN_ENABLED: ${ZIPKIN_ENABLED:-false}
+      ZIPKIN_ENDPOINT: ${ZIPKIN_ENDPOINT:-http://zipkin:9411/api/v2/spans}
+    depends_on:
+      - redis

@@ -17,6 +17,7 @@ out/
 *.log
 logs/
 **/logs/
+.runtime/
 
 # Local environment and secrets
 .env
