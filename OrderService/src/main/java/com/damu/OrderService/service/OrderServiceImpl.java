@@ -6,10 +6,10 @@ import com.damu.OrderService.external.client.PaymentService;
 import com.damu.OrderService.external.client.ProductService;
 import com.damu.OrderService.external.request.PaymentRequest;
 import com.damu.OrderService.external.response.PaymentResponse;
+import com.damu.OrderService.external.response.ProductResponse;
 import com.damu.OrderService.model.OrderRequest;
 import com.damu.OrderService.model.OrderResponse;
 import com.damu.OrderService.repository.OrderRepository;
-import com.dailycodebuffer.ProductService.model.ProductResponse;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -41,11 +41,14 @@ public class OrderServiceImpl implements OrderService{
         //Payment Service -> Payments -> Success-> COMPLETE, Else
         //CANCELLED
 
-        log.info("Placing Order Request: {}", orderRequest);
+        log.info("Starting order placement productId={} quantity={} amount={} paymentMode={}",
+                orderRequest.getProductId(), orderRequest.getQuantity(), orderRequest.getTotalAmount(), orderRequest.getPaymentMode());
 
+        log.info("Reducing product quantity productId={} quantity={}", orderRequest.getProductId(), orderRequest.getQuantity());
         productService.reduceQuantity(orderRequest.getProductId(), orderRequest.getQuantity());
+        log.info("Product quantity reduced productId={} quantity={}", orderRequest.getProductId(), orderRequest.getQuantity());
 
-        log.info("Creating Order with Status CREATED");
+        log.info("Creating order with status=CREATED productId={}", orderRequest.getProductId());
         Order order = Order.builder()
                 .amount(orderRequest.getTotalAmount())
                 .orderStatus("CREATED")
@@ -55,8 +58,9 @@ public class OrderServiceImpl implements OrderService{
                 .build();
 
         order = orderRepository.save(order);
+        log.info("Order persisted orderId={} status={}", order.getId(), order.getOrderStatus());
 
-        log.info("Calling Payment Service to complete the payment");
+        log.info("Calling payment service orderId={} amount={}", order.getId(), orderRequest.getTotalAmount());
         PaymentRequest paymentRequest
                 = PaymentRequest.builder()
                 .orderId(order.getId())
@@ -67,31 +71,34 @@ public class OrderServiceImpl implements OrderService{
         String orderStatus = null;
         try {
             paymentService.doPayment(paymentRequest);
-            log.info("Payment done Successfully. Changing the Oder status to PLACED");
+            log.info("Payment completed successfully orderId={}", order.getId());
             orderStatus = "PLACED";
         } catch (Exception e) {
-            log.error("Error occurred in payment. Changing order status to PAYMENT_FAILED");
+            log.error("Payment failed orderId={} nextStatus=PAYMENT_FAILED error={}", order.getId(), e.getMessage(), e);
             orderStatus = "PAYMENT_FAILED";
         }
 
         order.setOrderStatus(orderStatus);
         orderRepository.save(order);
 
-        log.info("Order Places successfully with Order Id: {}", order.getId());
+        log.info("Order placement completed orderId={} finalStatus={}", order.getId(), orderStatus);
         return order.getId();
     }
 
     @Override
     public OrderResponse getOrderDetails(long orderId) {
-        log.info("Get order details for Order Id : {}", orderId);
+        log.info("Fetching order details orderId={}", orderId);
 
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new CustomException("Order not found for the order Id:" + orderId, "NOT_FOUND", 404));
+                .orElseThrow(() -> {
+                    log.warn("Order not found orderId={}", orderId);
+                    return new CustomException("Order not found for the order Id:" + orderId, "NOT_FOUND", 404);
+                });
 
-        log.info("Invoking Product service to fetch the product for id: {}", order.getProductId());
+        log.info("Calling product service for order details orderId={} productId={}", orderId, order.getProductId());
         ProductResponse productResponse = restTemplate.getForObject("http://PRODUCT-SERVICE/product/" + order.getProductId(), ProductResponse.class);
 
-        log.info("Getting payment information form the payment Service");
+        log.info("Calling payment service for order details orderId={}", orderId);
         PaymentResponse paymentResponse
                 = restTemplate.getForObject("http://PAYMENT-SERVICE/payment/order/" + order.getId(), PaymentResponse.class);
 
@@ -121,6 +128,7 @@ public class OrderServiceImpl implements OrderService{
                 .paymentDetails(paymentDetails)
                 .build();
 
+        log.info("Order details fetched orderId={} status={}", orderId, orderResponse.getOrderStatus());
         return orderResponse;
     }
 }

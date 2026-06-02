@@ -1,6 +1,13 @@
 server:
   port: 9090
 
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{traceId:-},%X{spanId:-}] [correlationId=%X{correlationId:-}] [${spring.application.name:-application}] %logger{36} - %msg%n"
+  level:
+    com.damu: INFO
+    org.springframework.cloud.gateway: INFO
+
 spring:
   application:
     name: API-GATEWAY

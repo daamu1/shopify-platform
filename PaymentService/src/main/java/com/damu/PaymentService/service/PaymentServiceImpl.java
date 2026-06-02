@@ -20,7 +20,8 @@ public class PaymentServiceImpl implements PaymentService{
 
     @Override
     public long doPayment(PaymentRequest paymentRequest) {
-        log.info("Recording Payment Details: {}", paymentRequest);
+        log.info("Recording payment orderId={} amount={} paymentMode={}",
+                paymentRequest.getOrderId(), paymentRequest.getAmount(), paymentRequest.getPaymentMode());
 
         TransactionDetails transactionDetails
                 = TransactionDetails.builder()
@@ -34,19 +35,25 @@ public class PaymentServiceImpl implements PaymentService{
 
         transactionDetailsRepository.save(transactionDetails);
 
-        log.info("Transaction Completed with Id: {}", transactionDetails.getId());
+        log.info("Payment recorded orderId={} paymentId={} status={}",
+                transactionDetails.getOrderId(), transactionDetails.getId(), transactionDetails.getPaymentStatus());
 
         return transactionDetails.getId();
     }
 
     @Override
     public PaymentResponse getPaymentDetailsByOrderId(String orderId) {
-        log.info("Getting payment details for the Order Id: {}", orderId);
+        log.info("Fetching payment details orderId={}", orderId);
 
         TransactionDetails transactionDetails
                 = transactionDetailsRepository.findByOrderId(Long.parseLong(orderId));
 
-        return PaymentResponse.builder()
+        if (transactionDetails == null) {
+            log.warn("Payment details not found orderId={}", orderId);
+            throw new IllegalArgumentException("Payment details not found for orderId: " + orderId);
+        }
+
+        PaymentResponse paymentResponse = PaymentResponse.builder()
         .paymentId(transactionDetails.getId())
         .paymentMode(PaymentMode.valueOf(transactionDetails.getPaymentMode()))
         .paymentDate(transactionDetails.getPaymentDate())
@@ -54,5 +61,8 @@ public class PaymentServiceImpl implements PaymentService{
         .status(transactionDetails.getPaymentStatus())
         .amount(transactionDetails.getAmount())
         .build();
+        log.info("Payment details fetched orderId={} paymentId={} status={}",
+                orderId, paymentResponse.getPaymentId(), paymentResponse.getStatus());
+        return paymentResponse;
     }
 }

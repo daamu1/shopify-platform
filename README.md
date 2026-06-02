@@ -37,3 +37,48 @@ Authroization server has configuration related to access token and refresh token
 Go to security → API → default audience to modify access policies and timing.
 
 To get refresh token , we need to ensure we have grant type refresh token for application and also scope is offline_access provided when retriving tokens. Refer application yaml of cloud gateway.
+
+## Logging high level design
+
+The application uses consistent operational logging across CloudGateway, OrderService, ProductService, PaymentService, ConfigServer, and service-registry.
+
+### Goals
+
+- Trace one user request across gateway and downstream services.
+- Capture business flow checkpoints such as order creation, quantity reduction, payment creation, and fallback execution.
+- Record failures with enough context to debug without logging secrets or full request payloads.
+- Keep log format consistent across services so logs can be searched by service, trace ID, span ID, or correlation ID.
+
+### Log flow
+
+1. CloudGateway receives the external request.
+2. `GatewayLoggingFilter` reads `X-Correlation-ID` or creates a new UUID.
+3. Gateway logs request start and completion, then forwards `X-Correlation-ID` downstream.
+4. MVC services use `RequestLoggingFilter` to put `correlationId` in MDC and return the same header in the response.
+5. OrderService propagates the same correlation ID through Feign and RestTemplate calls.
+6. Service, controller, and exception logs automatically include the same correlation ID through the shared console pattern.
+
+### Log format
+
+Each service config uses this shape:
+
+```text
+timestamp level [traceId,spanId] [correlationId=value] [SERVICE-NAME] logger - message
+```
+
+Sleuth trace/span IDs are included when Sleuth creates them. `correlationId` is application-level and is always created at the request boundary if the client does not send one.
+
+### Layer responsibilities
+
+- Gateway filter: log request entry, route completion, failures, and fallback triggers.
+- Controller layer: log API intent and successful completion using IDs and safe business fields.
+- Service layer: log business decisions, external service calls, state transitions, and persistence success.
+- Exception handlers: log domain errors at `WARN` and unexpected failures at `ERROR`.
+- Outbound clients: propagate `X-Correlation-ID` and log failed downstream responses.
+
+### Logging rules
+
+- Do not log access tokens, refresh tokens, passwords, client secrets, or authorization headers.
+- Do not log full request objects when they may contain sensitive data.
+- Prefer structured key-value style, for example `orderId=10 productId=4 status=PLACED`.
+- Use `INFO` for normal business checkpoints, `WARN` for expected domain failures, and `ERROR` for unexpected failures.

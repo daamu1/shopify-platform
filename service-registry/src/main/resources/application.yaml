@@ -1,6 +1,13 @@
 server:
   port: 8761
 
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{traceId:-},%X{spanId:-}] [correlationId=%X{correlationId:-}] [${spring.application.name:-service-registry}] %logger{36} - %msg%n"
+  level:
+    com.damu: INFO
+    com.netflix.eureka: INFO
+
 eureka:
   instance:
     hostname: localhost

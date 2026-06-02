@@ -5,11 +5,11 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.time.Instant;
 
 @Entity
-@Table(name = "ORDER_DETAILS")
+@Table(name = "orders")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -17,21 +17,22 @@ import java.time.Instant;
 public class Order {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "order_id")
     private long id;
 
-    @Column(name = "PRODUCT_ID")
+    @Column(name = "product_id", nullable = false)
     private long productId;
 
-    @Column(name = "QUANTITY")
+    @Column(name = "quantity", nullable = false)
     private long quantity;
 
-    @Column(name = "ORDER_DATE")
+    @Column(name = "order_date", nullable = false)
     private Instant orderDate;
 
-    @Column(name = "STATUS")
+    @Column(name = "order_status", nullable = false, length = 30)
     private String orderStatus;
 
-    @Column(name = "TOTAL_AMOUNT")
+    @Column(name = "total_amount", nullable = false)
     private long amount;
 }

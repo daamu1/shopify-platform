@@ -15,13 +15,14 @@ public class CustomErrorDecoder implements ErrorDecoder {
     @Override
     public Exception decode(String s, Response response) {
         ObjectMapper objectMapper = new ObjectMapper();
-        log.info("::{}", response.request().url());
-        log.info("::{}", response.request().headers());
+        log.warn("Feign call failed clientMethod={} status={} url={}", s, response.status(), response.request().url());
         try {
             ErrorResponse errorResponse = objectMapper.readValue(response.body().asInputStream(), ErrorResponse.class);
+            log.warn("Feign error decoded errorCode={} message={}", errorResponse.getErrorCode(), errorResponse.getErrorMessage());
             return new CustomException(errorResponse.getErrorMessage(), errorResponse.getErrorCode(), response.status());
 
         } catch (IOException e) {
+            log.error("Unable to decode Feign error response clientMethod={} status={}", s, response.status(), e);
             throw new CustomException("Internal Server Error", "INTERNAL_SERVER_ERROR", 500);
         }
     }

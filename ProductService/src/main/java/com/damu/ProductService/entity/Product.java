@@ -5,9 +5,10 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Entity
+@Table(name = "products")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -15,15 +16,16 @@ import javax.persistence.*;
 public class Product {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "product_id")
     private long productId;
 
-    @Column(name = "PRODUCT_NAME")
+    @Column(name = "product_name", nullable = false, length = 100)
     private String productName;
 
-    @Column(name = "PRICE")
+    @Column(name = "price", nullable = false)
     private long price;
 
-    @Column(name = "QUANTITY")
+    @Column(name = "quantity", nullable = false)
     private long quantity;
 }

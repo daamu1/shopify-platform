@@ -20,7 +20,8 @@ public class ProductServiceImpl implements ProductService{
 
     @Override
     public long addProduct(ProductRequest productRequest) {
-       log.info("Adding Product..");
+       log.info("Creating product name={} quantity={} price={}",
+               productRequest.getName(), productRequest.getQuantity(), productRequest.getPrice());
 
         Product product
                 = Product.builder()
@@ -31,35 +32,44 @@ public class ProductServiceImpl implements ProductService{
 
         productRepository.save(product);
 
-        log.info("Product Created");
+        log.info("Product created productId={} name={}", product.getProductId(), product.getProductName());
         return product.getProductId();
     }
 
     @Override
     public ProductResponse getProductById(long productId) {
-        log.info("Get the product for productId: {}", productId);
+        log.info("Fetching product productId={}", productId);
 
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new ProductServiceCustomException("Product with given id not found","PRODUCT_NOT_FOUND"));
+                .orElseThrow(() -> {
+                    log.warn("Product not found productId={}", productId);
+                    return new ProductServiceCustomException("Product with given id not found","PRODUCT_NOT_FOUND");
+                });
 
         ProductResponse productResponse = new ProductResponse();
         copyProperties(product, productResponse);
+        log.info("Product fetched productId={} quantity={} price={}", productId, product.getQuantity(), product.getPrice());
         return productResponse;
     }
 
     @Override
     public void reduceQuantity(long productId, long quantity) {
-        log.info("Reduce Quantity {} for Id: {}", quantity,productId);
+        log.info("Reducing product quantity productId={} requestedQuantity={}", productId, quantity);
 
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new ProductServiceCustomException("Product with given Id not found", "PRODUCT_NOT_FOUND"));
+                .orElseThrow(() -> {
+                    log.warn("Product not found while reducing quantity productId={}", productId);
+                    return new ProductServiceCustomException("Product with given Id not found", "PRODUCT_NOT_FOUND");
+                });
 
         if(product.getQuantity() < quantity) {
+            log.warn("Insufficient product quantity productId={} availableQuantity={} requestedQuantity={}",
+                    productId, product.getQuantity(), quantity);
             throw new ProductServiceCustomException("Product does not have sufficient Quantity", "INSUFFICIENT_QUANTITY");
         }
 
         product.setQuantity(product.getQuantity() - quantity);
         productRepository.save(product);
-        log.info("Product Quantity updated Successfully");
+        log.info("Product quantity updated productId={} remainingQuantity={}", productId, product.getQuantity());
     }
 }

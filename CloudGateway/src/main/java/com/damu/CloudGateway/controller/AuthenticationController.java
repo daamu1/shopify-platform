@@ -1,6 +1,7 @@
 package com.damu.CloudGateway.controller;
 
 import com.damu.CloudGateway.model.AuthenticationResponse;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.GrantedAuthority;
@@ -17,10 +18,12 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/authenticate")
+@Log4j2
 public class AuthenticationController {
 
     @GetMapping("/login")
     public ResponseEntity<AuthenticationResponse> login(@AuthenticationPrincipal OidcUser oidcUser, Model model, @RegisteredOAuth2AuthorizedClient("okta") OAuth2AuthorizedClient client) {
+        log.info("Authentication login request received user={}", oidcUser.getEmail());
         AuthenticationResponse authenticationResponse
                 = AuthenticationResponse.builder()
                 .userId(oidcUser.getEmail())
@@ -32,6 +35,8 @@ public class AuthenticationController {
                         .map(GrantedAuthority::getAuthority)
                         .collect(Collectors.toList()))
                 .build();
+        log.info("Authentication login completed user={} authorities={}",
+                oidcUser.getEmail(), authenticationResponse.getAuthorityList());
         return new ResponseEntity<>(authenticationResponse, HttpStatus.OK);
     }
 }
