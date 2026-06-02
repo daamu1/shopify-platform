@@ -66,7 +66,7 @@ Each service config uses this shape:
 timestamp level [traceId,spanId] [correlationId=value] [SERVICE-NAME] logger - message
 ```
 
-Sleuth trace/span IDs are included when Sleuth creates them. `correlationId` is application-level and is always created at the request boundary if the client does not send one.
+Micrometer trace/span IDs are included when tracing creates them. `correlationId` is application-level and is always created at the request boundary if the client does not send one.
 
 ### Layer responsibilities
 

@@ -13,8 +13,8 @@ logging:
 spring:
   datasource:
     url: jdbc:mysql://${DB_HOST:localhost}:3306/paymentdb
-    username: root
-    password: root
+    username: damu
+    password: password123
     driverClassName: com.mysql.cj.jdbc.Driver
   jpa:
     database-platform: org.hibernate.dialect.MySQL8Dialect
