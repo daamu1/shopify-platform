@@ -30,6 +30,58 @@ Access zipkin dashboard with http://localhost:9411 which was exposed using loadb
 - Set up cloud gateway pod : kubectl apply -f cloud-gateway-deployment.yaml
 - Set up other microservices pod : kubectl apply -f payment-service-deployment.yaml/order-service-deployment.yaml/product-service-deployment.yaml
 
+## Running with Docker Compose and local MySQL
+
+This repository includes Docker support for the Spring Boot services while keeping MySQL on the host machine. Service images use Amazon Corretto 17.
+
+Make sure local MySQL has these databases:
+
+```sql
+CREATE DATABASE IF NOT EXISTS productdb;
+CREATE DATABASE IF NOT EXISTS paymentdb;
+CREATE DATABASE IF NOT EXISTS orderdb;
+CREATE DATABASE IF NOT EXISTS userdb;
+```
+
+Build the jars, build Docker images, and start the full stack:
+
+```bash
+scripts/docker-ecosystem.sh start
+```
+
+Deploy one service independently:
+
+```bash
+scripts/docker-ecosystem.sh start product-service
+scripts/docker-ecosystem.sh restart cloud-gateway
+scripts/docker-ecosystem.sh logs order-service
+```
+
+For a full working environment, start the platform services first:
+
+```bash
+scripts/docker-ecosystem.sh start service-registry config-server redis
+```
+
+Use custom local database credentials if needed:
+
+```bash
+DB_USER=root DB_PASSWORD=yourpass scripts/docker-ecosystem.sh start
+```
+
+Useful commands:
+
+```bash
+scripts/docker-ecosystem.sh status
+scripts/docker-ecosystem.sh logs
+scripts/docker-ecosystem.sh stop
+scripts/docker-ecosystem.sh clean
+```
+
+`start` and `restart` now recreate containers from a freshly built local image. Use `clean` when you only want to remove old containers/images without starting again.
+
+The Docker services connect to local MySQL through `host.docker.internal:3306` by default. If your MySQL is not reachable from Docker, set `DB_HOST` to a reachable host address or allow MySQL to listen on the Docker bridge interface.
+
 ## Related to OKTA Configuration
 First create new application in okta . Application type should be open id application.
 Authroization server has configuration related to access token and refresh token validity. 

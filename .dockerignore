@@ -1,0 +1,10 @@
+**
+
+!Dockerfile
+!service-registry/target/*.jar
+!ConfigServer/target/*.jar
+!ProductService/target/*.jar
+!PaymentService/target/*.jar
+!OrderService/target/*.jar
+!UserService/target/*.jar
+!CloudGateway/target/*.jar

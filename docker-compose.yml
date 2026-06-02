@@ -1,0 +1,160 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: shopify-redis
+    network_mode: host
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  service-registry:
+    build:
+      context: .
+      args:
+        SERVICE: service-registry
+    image: shopify/service-registry:local
+    container_name: shopify-service-registry
+    network_mode: host
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:8761/actuator/health | grep -q 'UP'"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+
+  config-server:
+    build:
+      context: .
+      args:
+        SERVICE: ConfigServer
+    image: shopify/config-server:local
+    container_name: shopify-config-server
+    network_mode: host
+    restart: unless-stopped
+    environment:
+      EUREKA_SERVER_ADDRESS: http://localhost:8761/eureka
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://localhost:8761/eureka
+    depends_on:
+      service-registry:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:9296/application/default"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+
+  product-service:
+    build:
+      context: .
+      args:
+        SERVICE: ProductService
+    image: shopify/product-service:local
+    container_name: shopify-product-service
+    network_mode: host
+    restart: unless-stopped
+    environment:
+      CONFIG_SERVER_URL: http://localhost:9296
+      SPRING_DATASOURCE_URL: ${PRODUCT_DB_URL:-jdbc:mysql://${DB_HOST:-localhost}:${DB_PORT:-3306}/productdb}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-damu}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-password123}
+      EUREKA_SERVER_ADDRESS: http://localhost:8761/eureka
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://localhost:8761/eureka
+      ZIPKIN_ENABLED: ${ZIPKIN_ENABLED:-false}
+      ZIPKIN_ENDPOINT: ${ZIPKIN_ENDPOINT:-http://zipkin:9411/api/v2/spans}
+    depends_on:
+      config-server:
+        condition: service_healthy
+
+  payment-service:
+    build:
+      context: .
+      args:
+        SERVICE: PaymentService
+    image: shopify/payment-service:local
+    container_name: shopify-payment-service
+    network_mode: host
+    restart: unless-stopped
+    environment:
+      CONFIG_SERVER_URL: http://localhost:9296
+      SPRING_DATASOURCE_URL: ${PAYMENT_DB_URL:-jdbc:mysql://${DB_HOST:-localhost}:${DB_PORT:-3306}/paymentdb}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-damu}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-password123}
+      EUREKA_SERVER_ADDRESS: http://localhost:8761/eureka
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://localhost:8761/eureka
+      ZIPKIN_ENABLED: ${ZIPKIN_ENABLED:-false}
+      ZIPKIN_ENDPOINT: ${ZIPKIN_ENDPOINT:-http://zipkin:9411/api/v2/spans}
+    depends_on:
+      config-server:
+        condition: service_healthy
+
+  order-service:
+    build:
+      context: .
+      args:
+        SERVICE: OrderService
+    image: shopify/order-service:local
+    container_name: shopify-order-service
+    network_mode: host
+    restart: unless-stopped
+    environment:
+      CONFIG_SERVER_URL: http://localhost:9296
+      SPRING_DATASOURCE_URL: ${ORDER_DB_URL:-jdbc:mysql://${DB_HOST:-localhost}:${DB_PORT:-3306}/orderdb}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-damu}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-password123}
+      EUREKA_SERVER_ADDRESS: http://localhost:8761/eureka
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://localhost:8761/eureka
+      ZIPKIN_ENABLED: ${ZIPKIN_ENABLED:-false}
+      ZIPKIN_ENDPOINT: ${ZIPKIN_ENDPOINT:-http://zipkin:9411/api/v2/spans}
+    depends_on:
+      config-server:
+        condition: service_healthy
+
+  user-service:
+    build:
+      context: .
+      args:
+        SERVICE: UserService
+    image: shopify/user-service:local
+    container_name: shopify-user-service
+    network_mode: host
+    restart: unless-stopped
+    environment:
+      CONFIG_SERVER_URL: http://localhost:9296
+      SPRING_DATASOURCE_URL: ${USER_DB_URL:-jdbc:mysql://${DB_HOST:-localhost}:${DB_PORT:-3306}/userdb}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-damu}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-password123}
+      EUREKA_SERVER_ADDRESS: http://localhost:8761/eureka
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://localhost:8761/eureka
+      ZIPKIN_ENABLED: ${ZIPKIN_ENABLED:-false}
+      ZIPKIN_ENDPOINT: ${ZIPKIN_ENDPOINT:-http://zipkin:9411/api/v2/spans}
+    depends_on:
+      config-server:
+        condition: service_healthy
+
+  cloud-gateway:
+    build:
+      context: .
+      args:
+        SERVICE: CloudGateway
+    image: shopify/cloud-gateway:local
+    container_name: shopify-cloud-gateway
+    network_mode: host
+    restart: unless-stopped
+    environment:
+      CONFIG_SERVER_URL: http://localhost:9296
+      SPRING_DATA_REDIS_HOST: localhost
+      SPRING_DATA_REDIS_PORT: 6379
+      EUREKA_SERVER_ADDRESS: http://localhost:8761/eureka
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://localhost:8761/eureka
+      ZIPKIN_ENABLED: ${ZIPKIN_ENABLED:-false}
+      ZIPKIN_ENDPOINT: ${ZIPKIN_ENDPOINT:-http://zipkin:9411/api/v2/spans}
+    depends_on:
+      config-server:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
