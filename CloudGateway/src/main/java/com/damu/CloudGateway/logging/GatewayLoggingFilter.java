@@ -42,10 +42,7 @@ public class GatewayLoggingFilter {
                     })
                     .then(Mono.fromRunnable(() -> {
                         MDC.put(CORRELATION_ID_KEY, correlationId);
-                        log.info("Gateway request completed method={} path={} status={} durationMs={}",
-                                request.getMethod(), request.getURI().getPath(),
-                                exchange.getResponse().getStatusCode(),
-                                System.currentTimeMillis() - startedAt);
+                        log.info("Gateway request completed method={} path={} status={} durationMs={}", request.getMethod(), request.getURI().getPath(), exchange.getResponse().getStatusCode(), System.currentTimeMillis() - startedAt);
                         MDC.remove(CORRELATION_ID_KEY);
                     }));
         };

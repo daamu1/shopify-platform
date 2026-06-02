@@ -10,7 +10,7 @@ import com.damu.OrderService.model.OrderRequest;
 import com.damu.OrderService.model.OrderResponse;
 import com.damu.OrderService.model.PaymentMode;
 import com.damu.OrderService.repository.OrderRepository;
-import com.dailycodebuffer.ProductService.model.ProductResponse;
+import com.damu.ProductService.model.ProductResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
