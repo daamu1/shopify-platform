@@ -44,18 +44,15 @@ public class PaymentServiceImpl implements PaymentService{
         log.info("Getting payment details for the Order Id: {}", orderId);
 
         TransactionDetails transactionDetails
-                = transactionDetailsRepository.findByOrderId(Long.valueOf(orderId));
+                = transactionDetailsRepository.findByOrderId(Long.parseLong(orderId));
 
-        PaymentResponse paymentResponse
-                = PaymentResponse.builder()
-                .paymentId(transactionDetails.getId())
-                .paymentMode(PaymentMode.valueOf(transactionDetails.getPaymentMode()))
-                .paymentDate(transactionDetails.getPaymentDate())
-                .orderId(transactionDetails.getOrderId())
-                .status(transactionDetails.getPaymentStatus())
-                .amount(transactionDetails.getAmount())
-                .build();
-
-        return paymentResponse;
+        return PaymentResponse.builder()
+        .paymentId(transactionDetails.getId())
+        .paymentMode(PaymentMode.valueOf(transactionDetails.getPaymentMode()))
+        .paymentDate(transactionDetails.getPaymentDate())
+        .orderId(transactionDetails.getOrderId())
+        .status(transactionDetails.getPaymentStatus())
+        .amount(transactionDetails.getAmount())
+        .build();
     }
 }

@@ -12,7 +12,6 @@ import java.util.Collection;
 @NoArgsConstructor
 @Builder
 public class AuthenticationResponse {
-
     private String userId;
     private String accessToken;
     private String refreshToken;

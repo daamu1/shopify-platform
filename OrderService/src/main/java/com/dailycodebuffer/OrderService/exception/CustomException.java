@@ -1,9 +1,11 @@
 package com.dailycodebuffer.OrderService.exception;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
-public class CustomException extends RuntimeException{
+@EqualsAndHashCode(callSuper = true)
+public class CustomException extends RuntimeException {
 
     private String errorCode;
     private int status;

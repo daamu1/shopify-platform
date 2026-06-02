@@ -55,15 +55,8 @@ public class OrderServiceApplication {
 				.clientCredentials()
 				.build();
 
-		DefaultOAuth2AuthorizedClientManager oAuth2AuthorizedClientManager
-				= new DefaultOAuth2AuthorizedClientManager(
-						clientRegistrationRepository,
-				oAuth2AuthorizedClientRepository);
-
-		oAuth2AuthorizedClientManager.setAuthorizedClientProvider(
-				oAuth2AuthorizedClientProvider
-		);
-
+		DefaultOAuth2AuthorizedClientManager oAuth2AuthorizedClientManager= new DefaultOAuth2AuthorizedClientManager(clientRegistrationRepository, oAuth2AuthorizedClientRepository);
+		oAuth2AuthorizedClientManager.setAuthorizedClientProvider(oAuth2AuthorizedClientProvider);
 		return oAuth2AuthorizedClientManager;
 	}
 

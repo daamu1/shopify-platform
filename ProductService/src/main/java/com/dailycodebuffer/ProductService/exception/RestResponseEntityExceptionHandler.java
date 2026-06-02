@@ -12,7 +12,7 @@ public class RestResponseEntityExceptionHandler extends ResponseEntityExceptionH
 
     @ExceptionHandler(ProductServiceCustomException.class)
     public ResponseEntity<ErrorResponse> handleProductServiceException(ProductServiceCustomException exception) {
-            return new ResponseEntity<>(new ErrorResponse().builder()
+        return new ResponseEntity<>(ErrorResponse.builder()
                     .errorMessage(exception.getMessage())
                     .errorCode(exception.getErrorCode())
                     .build(), HttpStatus.NOT_FOUND);

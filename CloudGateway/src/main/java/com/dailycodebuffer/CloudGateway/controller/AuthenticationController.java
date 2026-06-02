@@ -20,12 +20,7 @@ import java.util.stream.Collectors;
 public class AuthenticationController {
 
     @GetMapping("/login")
-    public ResponseEntity<AuthenticationResponse> login(
-            @AuthenticationPrincipal OidcUser oidcUser,
-            Model model,
-            @RegisteredOAuth2AuthorizedClient("okta")
-             OAuth2AuthorizedClient client
-    ) {
+    public ResponseEntity<AuthenticationResponse> login(@AuthenticationPrincipal OidcUser oidcUser, Model model, @RegisteredOAuth2AuthorizedClient("okta") OAuth2AuthorizedClient client) {
         AuthenticationResponse authenticationResponse
                 = AuthenticationResponse.builder()
                 .userId(oidcUser.getEmail())
