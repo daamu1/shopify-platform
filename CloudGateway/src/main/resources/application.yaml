@@ -8,6 +8,16 @@ logging:
     com.damu: INFO
     org.springframework.cloud.gateway: INFO
 
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: ${ZIPKIN_ENDPOINT:http://localhost:9411/api/v2/spans}
+      export:
+        enabled: ${ZIPKIN_ENABLED:false}
+
 spring:
   application:
     name: API-GATEWAY
@@ -17,56 +27,68 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: https://dev-15585796.okta.com/oauth2/default
+          issuer-uri: https://dev-km3bobyjhg8i37bc.us.auth0.com/
       client:
         registration:
-          okta:
-            provider: okta
-            client-id: 0oa6cgklvwIS2SoFZ5d7
-            client-secret: L_VPQB5XQX5QAhnxaDqA0IhWG-TImnVpaHW7ER33
+          auth0:
+            provider: auth0
+            client-id: WRxJuQSxhLnKmoXH9pMG6BH3uNoob3jm
+            client-secret: a9Z7lObEhoTDr2gFd7EM2lRX4dVS5gYkGGzlLdDuZmg01_koBXzl8sgBECkZRPNV
             scope: openid, email, profile, offline_access
         provider:
-          okta:
-            issuer-uri: https://dev-15585796.okta.com/oauth2/default
+          auth0:
+            issuer-uri: https://dev-km3bobyjhg8i37bc.us.auth0.com/
   cloud:
     gateway:
-      routes:
-        - id : ORDER-SERVICE
-          uri: lb://ORDER-SERVICE
-          predicates:
-            - Path=/order/**
-          filters:
-            - name: CircuitBreaker
-              args:
-                name: ORDER-SERVICE
-                fallbackuri: forward:/orderServiceFallBack
-            - name: RequestRateLimiter
-              args:
-                redis-rate-limiter.replenishRate: 1
-                redis-rate-limiter.burstCapacity: 1
-        - id: PAYMENT-SERVICE
-          uri: lb://PAYMENT-SERVICE
-          predicates:
-            - Path=/payment/**
-          filters:
-            - name: CircuitBreaker
-              args:
-                name: PAYMENT-SERVICE
-                fallbackuri: forward:/paymentServiceFallBack
-            - name: RequestRateLimiter
-              args:
-                redis-rate-limiter.replenishRate: 1
-                redis-rate-limiter.burstCapacity: 1
-        - id: PRODUCT-SERVICE
-          uri: lb://PRODUCT-SERVICE
-          predicates:
-            - Path=/product/**
-          filters:
-            - name: CircuitBreaker
-              args:
-                name: PRODUCT-SERVICE
-                fallbackuri: forward:/productServiceFallBack
-            - name: RequestRateLimiter
-              args:
-                redis-rate-limiter.replenishRate: 1
-                redis-rate-limiter.burstCapacity: 1
+      server:
+        webflux:
+          routes:
+            - id: ORDER-SERVICE
+              uri: lb://ORDER-SERVICE
+              predicates:
+                - Path=/order/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: ORDER-SERVICE
+                    fallbackUri: forward:/orderServiceFallBack
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 1
+                    redis-rate-limiter.burstCapacity: 1
+            - id: PAYMENT-SERVICE
+              uri: lb://PAYMENT-SERVICE
+              predicates:
+                - Path=/payment/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: PAYMENT-SERVICE
+                    fallbackUri: forward:/paymentServiceFallBack
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 1
+                    redis-rate-limiter.burstCapacity: 1
+            - id: PRODUCT-SERVICE
+              uri: lb://PRODUCT-SERVICE
+              predicates:
+                - Path=/product/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: PRODUCT-SERVICE
+                    fallbackUri: forward:/productServiceFallBack
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 1
+                    redis-rate-limiter.burstCapacity: 1
+
+resilience4j:
+  timelimiter:
+    instances:
+      ORDER-SERVICE:
+        timeout-duration: 5s
+      PAYMENT-SERVICE:
+        timeout-duration: 5s
+      PRODUCT-SERVICE:
+        timeout-duration: 5s

@@ -11,32 +11,19 @@ import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2Aut
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/authenticate")
 @Log4j2
 public class AuthenticationController {
 
-    @GetMapping("/login")
-    public ResponseEntity<AuthenticationResponse> login(@AuthenticationPrincipal OidcUser oidcUser, Model model, @RegisteredOAuth2AuthorizedClient("okta") OAuth2AuthorizedClient client) {
+    @GetMapping("/authentication/login")
+    public ResponseEntity<AuthenticationResponse> login(@AuthenticationPrincipal OidcUser oidcUser, Model model, @RegisteredOAuth2AuthorizedClient("auth0") OAuth2AuthorizedClient client) {
         log.info("Authentication login request received user={}", oidcUser.getEmail());
-        AuthenticationResponse authenticationResponse
-                = AuthenticationResponse.builder()
-                .userId(oidcUser.getEmail())
-                .accessToken(client.getAccessToken().getTokenValue())
-                .refreshToken(client.getRefreshToken().getTokenValue())
-                .expiresAt(client.getAccessToken().getExpiresAt().getEpochSecond())
-                .authorityList(oidcUser.getAuthorities()
-                        .stream()
-                        .map(GrantedAuthority::getAuthority)
-                        .collect(Collectors.toList()))
-                .build();
-        log.info("Authentication login completed user={} authorities={}",
-                oidcUser.getEmail(), authenticationResponse.getAuthorityList());
+        AuthenticationResponse authenticationResponse = AuthenticationResponse.builder().userId(oidcUser.getEmail()).accessToken(client.getAccessToken().getTokenValue()).refreshToken(client.getRefreshToken() == null ? null : client.getRefreshToken().getTokenValue()).expiresAt(client.getAccessToken().getExpiresAt().getEpochSecond()).authorityList(oidcUser.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList())).build();
+        log.info("Authentication login completed user={} authorities={}", oidcUser.getEmail(), authenticationResponse.getAuthorityList());
         return new ResponseEntity<>(authenticationResponse, HttpStatus.OK);
     }
 }
