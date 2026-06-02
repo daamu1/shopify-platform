@@ -82,6 +82,19 @@ spring:
                   args:
                     redis-rate-limiter.replenishRate: 1
                     redis-rate-limiter.burstCapacity: 1
+            - id: USER-SERVICE
+              uri: lb://USER-SERVICE
+              predicates:
+                - Path=/user/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: USER-SERVICE
+                    fallbackUri: forward:/userServiceFallBack
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 2
+                    redis-rate-limiter.burstCapacity: 4
 
 resilience4j:
   timelimiter:
@@ -91,4 +104,6 @@ resilience4j:
       PAYMENT-SERVICE:
         timeout-duration: 5s
       PRODUCT-SERVICE:
+        timeout-duration: 5s
+      USER-SERVICE:
         timeout-duration: 5s

@@ -17,4 +17,5 @@ public class AuthenticationResponse {
     private String refreshToken;
     private long expiresAt;
     private Collection<String> authorityList;
+    private UserProfileResponse userProfile;
 }

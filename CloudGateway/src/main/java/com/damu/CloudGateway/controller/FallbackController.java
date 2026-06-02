@@ -26,4 +26,10 @@ public class FallbackController {
         return "Product Service is down!";
     }
 
+    @GetMapping("/userServiceFallBack")
+    public String userServiceFallback() {
+        log.warn("Gateway fallback triggered service=USER-SERVICE");
+        return "User Service is down!";
+    }
+
 }
