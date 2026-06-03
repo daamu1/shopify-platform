@@ -27,7 +27,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: https://dev-15585796.okta.com/oauth2/default
+          issuer-uri: https://dev-km3bobyjhg8i37bc.us.auth0.com
       client:
         registration:
           internal-client:

@@ -18,6 +18,23 @@ management:
       export:
         enabled: ${ZIPKIN_ENABLED:false}
 
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+      - name: API Gateway
+        url: /v3/api-docs
+      - name: Order Service
+        url: /order/v3/api-docs
+      - name: Payment Service
+        url: /payment/v3/api-docs
+      - name: Product Service
+        url: /product/v3/api-docs
+      - name: User Service
+        url: /user/v3/api-docs
+
 spring:
   application:
     name: API-GATEWAY
@@ -43,6 +60,30 @@ spring:
       server:
         webflux:
           routes:
+            - id: ORDER-SERVICE-OPENAPI
+              uri: lb://ORDER-SERVICE
+              predicates:
+                - Path=/order/v3/api-docs
+              filters:
+                - StripPrefix=1
+            - id: PAYMENT-SERVICE-OPENAPI
+              uri: lb://PAYMENT-SERVICE
+              predicates:
+                - Path=/payment/v3/api-docs
+              filters:
+                - StripPrefix=1
+            - id: PRODUCT-SERVICE-OPENAPI
+              uri: lb://PRODUCT-SERVICE
+              predicates:
+                - Path=/product/v3/api-docs
+              filters:
+                - StripPrefix=1
+            - id: USER-SERVICE-OPENAPI
+              uri: lb://USER-SERVICE
+              predicates:
+                - Path=/user/v3/api-docs
+              filters:
+                - StripPrefix=1
             - id: ORDER-SERVICE
               uri: lb://ORDER-SERVICE
               predicates:

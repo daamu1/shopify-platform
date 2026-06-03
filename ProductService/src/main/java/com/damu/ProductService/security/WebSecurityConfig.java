@@ -12,11 +12,18 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableMethodSecurity
 public class WebSecurityConfig {
 
+    private static final String[] DOCUMENTATION_PATHS = {
+            "/v3/api-docs/**",
+            "/swagger-ui.html",
+            "/swagger-ui/**",
+            "/webjars/**"
+    };
+
     @Bean
     public SecurityFilterChain securityWebFilterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(authorizeRequest -> authorizeRequest
-                .anyRequest()
-                .authenticated())
+                .requestMatchers(DOCUMENTATION_PATHS).permitAll()
+                .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> {
                 }));
         return http.build();
