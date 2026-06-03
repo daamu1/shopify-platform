@@ -1,10 +1,11 @@
-package com.damu.PaymentService.service;
+package com.damu.PaymentService.service.impl;
 
 import com.damu.PaymentService.entity.TransactionDetails;
 import com.damu.PaymentService.model.PaymentMode;
 import com.damu.PaymentService.model.PaymentRequest;
 import com.damu.PaymentService.model.PaymentResponse;
 import com.damu.PaymentService.repository.TransactionDetailsRepository;
+import com.damu.PaymentService.service.PaymentService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

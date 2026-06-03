@@ -29,9 +29,13 @@ spring:
   application:
     name: USER-SERVICE
   config:
-    import: configserver:http://localhost:9296
+    import: configserver:${CONFIG_SERVER_URL:http://localhost:9296}
+
+app:
   security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: https://dev-km3bobyjhg8i37bc.us.auth0.com/
+    jwt:
+      issuer: ${IAM_JWT_ISSUER:http://localhost:8083}
+      audience: ${IAM_JWT_AUDIENCE:shop-api}
+      secret: ${IAM_JWT_SECRET:2MYI7CSmDvVcNU3IdTyE/rpzUGNkR2cPeabl5+/nuHdukRpVTbiKlwoWRfiZMbKf216DVmqzmnjLyAhgFOstUA==}
+      access-token-ttl-minutes: ${IAM_ACCESS_TOKEN_TTL_MINUTES:15}
+      refresh-token-ttl-days: ${IAM_REFRESH_TOKEN_TTL_DAYS:30}

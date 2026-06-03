@@ -1,4 +1,4 @@
-package com.damu.OrderService.service;
+package com.damu.OrderService.service.impl;
 
 import com.damu.OrderService.entity.Order;
 import com.damu.OrderService.exception.CustomException;
@@ -7,11 +7,15 @@ import com.damu.OrderService.external.client.ProductService;
 import com.damu.OrderService.external.request.PaymentRequest;
 import com.damu.OrderService.external.response.PaymentResponse;
 import com.damu.OrderService.external.response.ProductResponse;
+import com.damu.OrderService.model.ApiResponse;
 import com.damu.OrderService.model.OrderRequest;
 import com.damu.OrderService.model.OrderResponse;
 import com.damu.OrderService.repository.OrderRepository;
+import com.damu.OrderService.service.OrderService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -96,11 +100,28 @@ public class OrderServiceImpl implements OrderService{
                 });
 
         log.info("Calling product service for order details orderId={} productId={}", orderId, order.getProductId());
-        ProductResponse productResponse = restTemplate.getForObject("http://PRODUCT-SERVICE/product/" + order.getProductId(), ProductResponse.class);
+        ApiResponse<ProductResponse> productApiResponse = restTemplate.exchange(
+                "http://PRODUCT-SERVICE/product/" + order.getProductId(),
+                HttpMethod.GET,
+                null,
+                new ParameterizedTypeReference<ApiResponse<ProductResponse>>() {
+                }).getBody();
+        if (productApiResponse == null || productApiResponse.getData() == null) {
+            throw new CustomException("Product details are not available", "DOWNSTREAM_ERROR", 502);
+        }
+        ProductResponse productResponse = productApiResponse.getData();
 
         log.info("Calling payment service for order details orderId={}", orderId);
-        PaymentResponse paymentResponse
-                = restTemplate.getForObject("http://PAYMENT-SERVICE/payment/order/" + order.getId(), PaymentResponse.class);
+        ApiResponse<PaymentResponse> paymentApiResponse = restTemplate.exchange(
+                "http://PAYMENT-SERVICE/payment/order/" + order.getId(),
+                HttpMethod.GET,
+                null,
+                new ParameterizedTypeReference<ApiResponse<PaymentResponse>>() {
+                }).getBody();
+        if (paymentApiResponse == null || paymentApiResponse.getData() == null) {
+            throw new CustomException("Payment details are not available", "DOWNSTREAM_ERROR", 502);
+        }
+        PaymentResponse paymentResponse = paymentApiResponse.getData();
 
         OrderResponse.ProductDetails productDetails
                 = OrderResponse.ProductDetails

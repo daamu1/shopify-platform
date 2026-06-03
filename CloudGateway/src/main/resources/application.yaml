@@ -18,31 +18,68 @@ management:
       export:
         enabled: ${ZIPKIN_ENABLED:false}
 
+app:
+  security:
+    jwt:
+      issuer: ${IAM_JWT_ISSUER:http://localhost:8083}
+      audience: ${IAM_JWT_AUDIENCE:shop-api}
+      secret: ${IAM_JWT_SECRET:2MYI7CSmDvVcNU3IdTyE/rpzUGNkR2cPeabl5+/nuHdukRpVTbiKlwoWRfiZMbKf216DVmqzmnjLyAhgFOstUA==}
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+      - name: API Gateway
+        url: /v3/api-docs
+      - name: Order Service
+        url: /order/v3/api-docs
+      - name: Payment Service
+        url: /payment/v3/api-docs
+      - name: Product Service
+        url: /product/v3/api-docs
+      - name: User Service
+        url: /user/v3/api-docs
+
 spring:
   application:
     name: API-GATEWAY
   config:
-    import: configserver:http://localhost:9296
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: https://dev-km3bobyjhg8i37bc.us.auth0.com/
-      client:
-        registration:
-          auth0:
-            provider: auth0
-            client-id: WRxJuQSxhLnKmoXH9pMG6BH3uNoob3jm
-            client-secret: a9Z7lObEhoTDr2gFd7EM2lRX4dVS5gYkGGzlLdDuZmg01_koBXzl8sgBECkZRPNV
-            scope: openid, email, profile, offline_access
-        provider:
-          auth0:
-            issuer-uri: https://dev-km3bobyjhg8i37bc.us.auth0.com/
+    import: configserver:${CONFIG_SERVER_URL:http://localhost:9296}
   cloud:
     gateway:
       server:
         webflux:
           routes:
+            - id: USER-SERVICE-AUTH
+              uri: lb://USER-SERVICE
+              predicates:
+                - Path=/auth/**
+            - id: ORDER-SERVICE-OPENAPI
+              uri: lb://ORDER-SERVICE
+              predicates:
+                - Path=/order/v3/api-docs
+              filters:
+                - StripPrefix=1
+            - id: PAYMENT-SERVICE-OPENAPI
+              uri: lb://PAYMENT-SERVICE
+              predicates:
+                - Path=/payment/v3/api-docs
+              filters:
+                - StripPrefix=1
+            - id: PRODUCT-SERVICE-OPENAPI
+              uri: lb://PRODUCT-SERVICE
+              predicates:
+                - Path=/product/v3/api-docs
+              filters:
+                - StripPrefix=1
+            - id: USER-SERVICE-OPENAPI
+              uri: lb://USER-SERVICE
+              predicates:
+                - Path=/user/v3/api-docs
+              filters:
+                - StripPrefix=1
             - id: ORDER-SERVICE
               uri: lb://ORDER-SERVICE
               predicates:

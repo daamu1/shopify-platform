@@ -1,10 +1,11 @@
-package com.damu.UserService.service;
+package com.damu.UserService.service.impl;
 
 import com.damu.UserService.entity.ApplicationUser;
 import com.damu.UserService.exception.UserServiceException;
 import com.damu.UserService.model.UserProfileResponse;
 import com.damu.UserService.model.UserRegistrationRequest;
 import com.damu.UserService.repository.ApplicationUserRepository;
+import com.damu.UserService.service.UserService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,6 +52,13 @@ public class UserServiceImpl implements UserService {
         return toResponse(user);
     }
 
+    @Override
+    public UserProfileResponse getUserById(long userId) {
+        ApplicationUser user = applicationUserRepository.findById(userId)
+                .orElseThrow(() -> new UserServiceException("User profile not found", "USER_NOT_FOUND", 404));
+        return toResponse(user);
+    }
+
     private ApplicationUser createUser(UserRegistrationRequest request) {
         applicationUserRepository.findByEmail(request.getEmail())
                 .ifPresent(existingUser -> {
@@ -65,6 +73,10 @@ public class UserServiceImpl implements UserService {
                 .email(request.getEmail())
                 .fullName(request.getFullName())
                 .role(DEFAULT_ROLE)
+                .enabled(true)
+                .emailVerified(false)
+                .accountLocked(false)
+                .failedLoginAttempts(0)
                 .createdAt(now)
                 .updatedAt(now)
                 .build();

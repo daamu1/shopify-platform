@@ -75,17 +75,52 @@ Useful commands:
 scripts/docker-ecosystem.sh status
 scripts/docker-ecosystem.sh logs
 scripts/docker-ecosystem.sh stop
+scripts/docker-ecosystem.sh clean
 ```
+
+`start` and `restart` now recreate containers from a freshly built local image. Use `clean` when you only want to remove old containers/images without starting again.
 
 The Docker services connect to local MySQL through `host.docker.internal:3306` by default. If your MySQL is not reachable from Docker, set `DB_HOST` to a reachable host address or allow MySQL to listen on the Docker bridge interface.
 
-## Related to OKTA Configuration
-First create new application in okta . Application type should be open id application.
-Authroization server has configuration related to access token and refresh token validity. 
+## Running locally with jars
 
-Go to security → API → default audience to modify access policies and timing.
+Use `scripts/deploy-ecosystem.sh` to build and run the services directly with `java -jar`.
 
-To get refresh token , we need to ensure we have grant type refresh token for application and also scope is offline_access provided when retriving tokens. Refer application yaml of cloud gateway.
+Service ports:
+
+| Service | Port |
+| --- | ---: |
+| service-registry | 8761 |
+| ConfigServer | 9296 |
+| ProductService | 8080 |
+| PaymentService | 8081 |
+| OrderService | 8082 |
+| UserService | 8083 |
+| CloudGateway | 9090 |
+
+Start everything:
+
+```bash
+scripts/deploy-ecosystem.sh start
+```
+
+Start or stop one service without restarting the whole ecosystem:
+
+```bash
+scripts/deploy-ecosystem.sh up UserService
+scripts/deploy-ecosystem.sh down UserService
+```
+
+Other useful local commands:
+
+```bash
+scripts/deploy-ecosystem.sh status
+scripts/deploy-ecosystem.sh logs
+scripts/deploy-ecosystem.sh stop
+scripts/deploy-ecosystem.sh clean
+```
+
+The script expects MySQL on `localhost:3306` by default and starts Redis with Docker if Redis is not already reachable on `localhost:6379`.
 
 ## Logging high level design
 

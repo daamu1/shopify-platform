@@ -1,12 +1,13 @@
 package com.damu.OrderService.external.intercept;
 
+import org.jspecify.annotations.NonNull;
 import org.slf4j.MDC;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.ClientHttpResponse;
-import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.io.IOException;
 
@@ -14,27 +15,21 @@ public class RestTemplateInterceptor implements ClientHttpRequestInterceptor {
 
     private static final String CORRELATION_ID_HEADER = "X-Correlation-ID";
     private static final String CORRELATION_ID_KEY = "correlationId";
-
-    private final OAuth2AuthorizedClientManager oAuth2AuthorizedClientManager;
-
-    public RestTemplateInterceptor(OAuth2AuthorizedClientManager oAuth2AuthorizedClientManager) {
-        this.oAuth2AuthorizedClientManager = oAuth2AuthorizedClientManager;
-    }
+    private static final String AUTHORIZATION_HEADER = "Authorization";
 
     @Override
-    public ClientHttpResponse intercept(HttpRequest request, byte[] body, ClientHttpRequestExecution execution) throws IOException {
+    public ClientHttpResponse intercept(@NonNull HttpRequest request, byte @NonNull [] body, @NonNull ClientHttpRequestExecution execution) throws IOException {
         String correlationId = MDC.get(CORRELATION_ID_KEY);
         if (correlationId != null && !correlationId.isBlank()) {
             request.getHeaders().add(CORRELATION_ID_HEADER, correlationId);
         }
-        request.getHeaders().add("Authorization",
-                "Bearer " +
-                oAuth2AuthorizedClientManager
-                        .authorize(OAuth2AuthorizeRequest
-                                .withClientRegistrationId("internal-client")
-                                .principal("internal")
-                                .build())
-                        .getAccessToken().getTokenValue());
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attributes != null) {
+            String authorization = attributes.getRequest().getHeader(AUTHORIZATION_HEADER);
+            if (authorization != null && !authorization.isBlank()) {
+                request.getHeaders().set(AUTHORIZATION_HEADER, authorization);
+            }
+        }
 
         return execution.execute(request, body);
     }

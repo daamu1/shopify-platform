@@ -38,8 +38,26 @@ public class ApplicationUser {
     @Column(name = "full_name", length = 150)
     private String fullName;
 
+    @Column(name = "password_hash", length = 100)
+    private String passwordHash;
+
     @Column(name = "role", nullable = false, length = 30)
     private String role;
+
+    @Column(name = "enabled", nullable = false)
+    private boolean enabled;
+
+    @Column(name = "email_verified", nullable = false)
+    private boolean emailVerified;
+
+    @Column(name = "account_locked", nullable = false)
+    private boolean accountLocked;
+
+    @Column(name = "failed_login_attempts", nullable = false)
+    private int failedLoginAttempts;
+
+    @Column(name = "locked_until")
+    private Instant lockedUntil;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
