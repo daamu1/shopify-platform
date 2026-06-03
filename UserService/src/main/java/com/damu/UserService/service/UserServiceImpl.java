@@ -51,6 +51,13 @@ public class UserServiceImpl implements UserService {
         return toResponse(user);
     }
 
+    @Override
+    public UserProfileResponse getUserById(long userId) {
+        ApplicationUser user = applicationUserRepository.findById(userId)
+                .orElseThrow(() -> new UserServiceException("User profile not found", "USER_NOT_FOUND", 404));
+        return toResponse(user);
+    }
+
     private ApplicationUser createUser(UserRegistrationRequest request) {
         applicationUserRepository.findByEmail(request.getEmail())
                 .ifPresent(existingUser -> {
@@ -65,6 +72,10 @@ public class UserServiceImpl implements UserService {
                 .email(request.getEmail())
                 .fullName(request.getFullName())
                 .role(DEFAULT_ROLE)
+                .enabled(true)
+                .emailVerified(false)
+                .accountLocked(false)
+                .failedLoginAttempts(0)
                 .createdAt(now)
                 .updatedAt(now)
                 .build();

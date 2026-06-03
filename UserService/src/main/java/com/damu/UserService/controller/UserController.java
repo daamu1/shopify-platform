@@ -37,6 +37,6 @@ public class UserController {
 
     @GetMapping("/me")
     public ResponseEntity<UserProfileResponse> me(@AuthenticationPrincipal Jwt jwt) {
-        return new ResponseEntity<>(userService.getUserByAuthSubject(jwt.getSubject()), HttpStatus.OK);
+        return new ResponseEntity<>(userService.getUserById(Long.parseLong(jwt.getSubject())), HttpStatus.OK);
     }
 }

@@ -9,6 +9,13 @@ logging:
     org.springframework.web: WARN
     org.hibernate.SQL: WARN
 
+app:
+  security:
+    jwt:
+      issuer: ${IAM_JWT_ISSUER:http://localhost:8083}
+      audience: ${IAM_JWT_AUDIENCE:shop-api}
+      secret: ${IAM_JWT_SECRET:2MYI7CSmDvVcNU3IdTyE/rpzUGNkR2cPeabl5+/nuHdukRpVTbiKlwoWRfiZMbKf216DVmqzmnjLyAhgFOstUA==}
+
 spring:
   datasource:
     url: jdbc:mysql://${DB_HOST:localhost}:3306/orderdb
@@ -23,22 +30,6 @@ spring:
     name: ORDER-SERVICE
   config:
     import: configserver:${CONFIG_SERVER_URL:http://localhost:9296}
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: https://dev-km3bobyjhg8i37bc.us.auth0.com
-      client:
-        registration:
-          internal-client:
-            provider: okta
-            authorization-grant-type: client_credentials
-            scope: internal
-            client-id: 0oa6cgklvwIS2SoFZ5d7
-            client-secret: L_VPQB5XQX5QAhnxaDqA0IhWG-TImnVpaHW7ER33
-        provider:
-          okta:
-            issuer-uri: https://dev-15585796.okta.com/oauth2/default
 
 resilience4j:
   circuitbreaker:

@@ -6,4 +6,5 @@ import com.damu.UserService.model.UserRegistrationRequest;
 public interface UserService {
     UserProfileResponse registerOrGetUser(UserRegistrationRequest request);
     UserProfileResponse getUserByAuthSubject(String authSubject);
+    UserProfileResponse getUserById(long userId);
 }

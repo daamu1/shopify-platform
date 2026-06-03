@@ -18,7 +18,7 @@ public class ProductController {
     @Autowired
     private ProductService productService;
 
-    @PreAuthorize("hasAuthority('Admin')")
+    @PreAuthorize("hasAuthority('product:create')")
     @PostMapping
     public ResponseEntity<Long> addProduct(@RequestBody ProductRequest productRequest) {
         log.info("Add product request received name={} quantity={} price={}",
@@ -28,7 +28,7 @@ public class ProductController {
         return new ResponseEntity<>(productId, HttpStatus.CREATED);
     }
 
-    @PreAuthorize("hasAuthority('Admin') || hasAuthority('Customer') || hasAuthority('SCOPE_internal')")
+    @PreAuthorize("hasAuthority('product:read')")
     @GetMapping("/{id}")
     public ResponseEntity<ProductResponse> getProductById(@PathVariable("id") long productId) {
         log.info("Get product request received productId={}", productId);

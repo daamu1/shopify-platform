@@ -9,6 +9,13 @@ logging:
     org.springframework.web: WARN
     org.hibernate.SQL: WARN
 
+app:
+  security:
+    jwt:
+      issuer: ${IAM_JWT_ISSUER:http://localhost:8083}
+      audience: ${IAM_JWT_AUDIENCE:shop-api}
+      secret: ${IAM_JWT_SECRET:2MYI7CSmDvVcNU3IdTyE/rpzUGNkR2cPeabl5+/nuHdukRpVTbiKlwoWRfiZMbKf216DVmqzmnjLyAhgFOstUA==}
+
 spring:
   datasource:
     url: jdbc:mysql://${DB_HOST:localhost}:3306/productdb
@@ -23,11 +30,6 @@ spring:
     name: PRODUCT-SERVICE
   config:
     import: configserver:${CONFIG_SERVER_URL:http://localhost:9296}
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: https://dev-km3bobyjhg8i37bc.okta.com/oauth2/default
 
 #eureka:
 #  instance:

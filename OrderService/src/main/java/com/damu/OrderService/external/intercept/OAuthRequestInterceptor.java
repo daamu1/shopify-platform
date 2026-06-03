@@ -2,27 +2,23 @@ package com.damu.OrderService.external.intercept;
 
 import feign.RequestInterceptor;
 import feign.RequestTemplate;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
-
-import java.util.Objects;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 @Configuration
 public class OAuthRequestInterceptor implements RequestInterceptor {
 
-    @Autowired
-    private OAuth2AuthorizedClientManager oAuth2AuthorizedClientManager;
+    private static final String AUTHORIZATION_HEADER = "Authorization";
 
     @Override
     public void apply(RequestTemplate template) {
-        template.header("Authorization", "Bearer "
-        + Objects.requireNonNull(oAuth2AuthorizedClientManager
-                        .authorize(OAuth2AuthorizeRequest
-                                .withClientRegistrationId("internal-client")
-                                .principal("internal")
-                                .build()))
-                .getAccessToken().getTokenValue());
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attributes != null) {
+            String authorization = attributes.getRequest().getHeader(AUTHORIZATION_HEADER);
+            if (authorization != null && !authorization.isBlank()) {
+                template.header(AUTHORIZATION_HEADER, authorization);
+            }
+        }
     }
 }

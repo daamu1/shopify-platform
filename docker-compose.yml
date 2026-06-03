@@ -58,6 +58,9 @@ services:
     network_mode: host
     restart: unless-stopped
     environment:
+      IAM_JWT_ISSUER: ${IAM_JWT_ISSUER:-http://localhost:8083}
+      IAM_JWT_AUDIENCE: ${IAM_JWT_AUDIENCE:-shop-api}
+      IAM_JWT_SECRET: ${IAM_JWT_SECRET:-2MYI7CSmDvVcNU3IdTyE/rpzUGNkR2cPeabl5+/nuHdukRpVTbiKlwoWRfiZMbKf216DVmqzmnjLyAhgFOstUA==}
       CONFIG_SERVER_URL: http://localhost:9296
       SPRING_DATASOURCE_URL: ${PRODUCT_DB_URL:-jdbc:mysql://${DB_HOST:-localhost}:${DB_PORT:-3306}/productdb}
       SPRING_DATASOURCE_USERNAME: ${DB_USER:-damu}
@@ -80,6 +83,9 @@ services:
     network_mode: host
     restart: unless-stopped
     environment:
+      IAM_JWT_ISSUER: ${IAM_JWT_ISSUER:-http://localhost:8083}
+      IAM_JWT_AUDIENCE: ${IAM_JWT_AUDIENCE:-shop-api}
+      IAM_JWT_SECRET: ${IAM_JWT_SECRET:-2MYI7CSmDvVcNU3IdTyE/rpzUGNkR2cPeabl5+/nuHdukRpVTbiKlwoWRfiZMbKf216DVmqzmnjLyAhgFOstUA==}
       CONFIG_SERVER_URL: http://localhost:9296
       SPRING_DATASOURCE_URL: ${PAYMENT_DB_URL:-jdbc:mysql://${DB_HOST:-localhost}:${DB_PORT:-3306}/paymentdb}
       SPRING_DATASOURCE_USERNAME: ${DB_USER:-damu}
@@ -102,6 +108,9 @@ services:
     network_mode: host
     restart: unless-stopped
     environment:
+      IAM_JWT_ISSUER: ${IAM_JWT_ISSUER:-http://localhost:8083}
+      IAM_JWT_AUDIENCE: ${IAM_JWT_AUDIENCE:-shop-api}
+      IAM_JWT_SECRET: ${IAM_JWT_SECRET:-2MYI7CSmDvVcNU3IdTyE/rpzUGNkR2cPeabl5+/nuHdukRpVTbiKlwoWRfiZMbKf216DVmqzmnjLyAhgFOstUA==}
       CONFIG_SERVER_URL: http://localhost:9296
       SPRING_DATASOURCE_URL: ${ORDER_DB_URL:-jdbc:mysql://${DB_HOST:-localhost}:${DB_PORT:-3306}/orderdb}
       SPRING_DATASOURCE_USERNAME: ${DB_USER:-damu}
@@ -124,6 +133,9 @@ services:
     network_mode: host
     restart: unless-stopped
     environment:
+      IAM_JWT_ISSUER: ${IAM_JWT_ISSUER:-http://localhost:8083}
+      IAM_JWT_AUDIENCE: ${IAM_JWT_AUDIENCE:-shop-api}
+      IAM_JWT_SECRET: ${IAM_JWT_SECRET:-2MYI7CSmDvVcNU3IdTyE/rpzUGNkR2cPeabl5+/nuHdukRpVTbiKlwoWRfiZMbKf216DVmqzmnjLyAhgFOstUA==}
       CONFIG_SERVER_URL: http://localhost:9296
       SPRING_DATASOURCE_URL: ${USER_DB_URL:-jdbc:mysql://${DB_HOST:-localhost}:${DB_PORT:-3306}/userdb}
       SPRING_DATASOURCE_USERNAME: ${DB_USER:-damu}
@@ -146,6 +158,9 @@ services:
     network_mode: host
     restart: unless-stopped
     environment:
+      IAM_JWT_ISSUER: ${IAM_JWT_ISSUER:-http://localhost:8083}
+      IAM_JWT_AUDIENCE: ${IAM_JWT_AUDIENCE:-shop-api}
+      IAM_JWT_SECRET: ${IAM_JWT_SECRET:-2MYI7CSmDvVcNU3IdTyE/rpzUGNkR2cPeabl5+/nuHdukRpVTbiKlwoWRfiZMbKf216DVmqzmnjLyAhgFOstUA==}
       CONFIG_SERVER_URL: http://localhost:9296
       SPRING_DATA_REDIS_HOST: localhost
       SPRING_DATA_REDIS_PORT: 6379

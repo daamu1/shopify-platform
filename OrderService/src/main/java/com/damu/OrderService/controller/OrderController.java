@@ -18,7 +18,7 @@ public class OrderController {
     @Autowired
     private OrderService orderService;
 
-    @PreAuthorize("hasAuthority('Customer')")
+    @PreAuthorize("hasAuthority('order:create')")
     @PostMapping("/placeOrder")
     public ResponseEntity<Long> placeOrder(@RequestBody OrderRequest orderRequest) {
         log.info("Place order request received productId={} quantity={} amount={}",
@@ -28,7 +28,7 @@ public class OrderController {
         return new ResponseEntity<>(orderId, HttpStatus.OK);
     }
 
-    @PreAuthorize("hasAuthority('Admin') || hasAuthority('Customer')")
+    @PreAuthorize("hasAuthority('order:read:self') || hasAuthority('order:read:any')")
     @GetMapping("/{orderId}")
     public ResponseEntity<OrderResponse> getOrderDetails(@PathVariable long orderId) {
         log.info("Get order details request received orderId={}", orderId);
