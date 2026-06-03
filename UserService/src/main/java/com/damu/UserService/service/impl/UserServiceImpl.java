@@ -1,10 +1,11 @@
-package com.damu.UserService.service;
+package com.damu.UserService.service.impl;
 
 import com.damu.UserService.entity.ApplicationUser;
 import com.damu.UserService.exception.UserServiceException;
 import com.damu.UserService.model.UserProfileResponse;
 import com.damu.UserService.model.UserRegistrationRequest;
 import com.damu.UserService.repository.ApplicationUserRepository;
+import com.damu.UserService.service.UserService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

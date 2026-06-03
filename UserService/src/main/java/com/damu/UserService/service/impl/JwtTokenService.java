@@ -1,4 +1,4 @@
-package com.damu.UserService.service;
+package com.damu.UserService.service.impl;
 
 import com.damu.UserService.config.JwtProperties;
 import com.damu.UserService.entity.ApplicationUser;

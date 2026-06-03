@@ -1,4 +1,4 @@
-package com.damu.OrderService.service;
+package com.damu.OrderService.service.impl;
 
 import com.damu.OrderService.entity.Order;
 import com.damu.OrderService.exception.CustomException;
@@ -10,6 +10,7 @@ import com.damu.OrderService.external.response.ProductResponse;
 import com.damu.OrderService.model.OrderRequest;
 import com.damu.OrderService.model.OrderResponse;
 import com.damu.OrderService.repository.OrderRepository;
+import com.damu.OrderService.service.OrderService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

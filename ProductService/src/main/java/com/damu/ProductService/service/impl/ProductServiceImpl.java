@@ -1,10 +1,11 @@
-package com.damu.ProductService.service;
+package com.damu.ProductService.service.impl;
 
 import com.damu.ProductService.entity.Product;
 import com.damu.ProductService.exception.ProductServiceCustomException;
 import com.damu.ProductService.model.ProductRequest;
 import com.damu.ProductService.model.ProductResponse;
 import com.damu.ProductService.repository.ProductRepository;
+import com.damu.ProductService.service.ProductService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

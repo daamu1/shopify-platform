@@ -8,6 +8,8 @@ PID_DIR="${RUNTIME_DIR}/pids"
 
 REDIS_CONTAINER="${REDIS_CONTAINER:-shopify-redis}"
 REDIS_IMAGE="${REDIS_IMAGE:-redis:7-alpine}"
+REDIS_HOST="${REDIS_HOST:-localhost}"
+REDIS_PORT="${REDIS_PORT:-6379}"
 
 DB_HOST="${DB_HOST:-localhost}"
 DB_PORT="${DB_PORT:-3306}"
@@ -17,8 +19,15 @@ DB_ADMIN_USER="${DB_ADMIN_USER:-$DB_USER}"
 DB_ADMIN_PASSWORD="${DB_ADMIN_PASSWORD:-$DB_PASSWORD}"
 
 EUREKA_SERVER_ADDRESS="${EUREKA_SERVER_ADDRESS:-http://localhost:8761/eureka}"
+CONFIG_SERVER_URL="${CONFIG_SERVER_URL:-http://localhost:9296}"
 ZIPKIN_ENABLED="${ZIPKIN_ENABLED:-false}"
 ZIPKIN_ENDPOINT="${ZIPKIN_ENDPOINT:-http://localhost:9411/api/v2/spans}"
+
+IAM_JWT_ISSUER="${IAM_JWT_ISSUER:-http://localhost:8083}"
+IAM_JWT_AUDIENCE="${IAM_JWT_AUDIENCE:-shop-api}"
+IAM_JWT_SECRET="${IAM_JWT_SECRET:-2MYI7CSmDvVcNU3IdTyE/rpzUGNkR2cPeabl5+/nuHdukRpVTbiKlwoWRfiZMbKf216DVmqzmnjLyAhgFOstUA==}"
+IAM_ACCESS_TOKEN_TTL_MINUTES="${IAM_ACCESS_TOKEN_TTL_MINUTES:-15}"
+IAM_REFRESH_TOKEN_TTL_DAYS="${IAM_REFRESH_TOKEN_TTL_DAYS:-30}"
 
 SKIP_TESTS="${SKIP_TESTS:-true}"
 STARTUP_TIMEOUT="${STARTUP_TIMEOUT:-120}"
@@ -33,12 +42,24 @@ declare -a SERVICES=(
   "CloudGateway:9090"
 )
 
+declare -a DOCKER_APP_CONTAINERS=(
+  "shopify-cloud-gateway"
+  "shopify-user-service"
+  "shopify-order-service"
+  "shopify-payment-service"
+  "shopify-product-service"
+  "shopify-config-server"
+  "shopify-service-registry"
+)
+
 usage() {
   cat <<'USAGE'
 Usage: scripts/deploy-ecosystem.sh [command]
 
 Commands:
   start      Build, check local infrastructure, and launch all services
+  up         Launch one service without rebuilding all services
+  down       Stop one service
   stop       Stop services and Redis container
   restart    Stop then start
   build      Build all services only
@@ -55,7 +76,14 @@ Useful environment variables:
   DB_PASSWORD=password        Default: password123
   DB_ADMIN_USER=user          Default: same as DB_USER
   DB_ADMIN_PASSWORD=password  Default: same as DB_PASSWORD
+  CONFIG_SERVER_URL=url       Default: http://localhost:9296
+  REDIS_HOST=host             Default: localhost
+  REDIS_PORT=port             Default: 6379
   ZIPKIN_ENABLED=true|false   Default: false
+
+Examples:
+  scripts/deploy-ecosystem.sh up UserService
+  scripts/deploy-ecosystem.sh down UserService
 USAGE
 }
 
@@ -91,8 +119,29 @@ container_running() {
   docker ps --format '{{.Names}}' | grep -qx "$1"
 }
 
+container_for_service() {
+  case "$1" in
+    service-registry) printf '%s\n' "shopify-service-registry" ;;
+    ConfigServer) printf '%s\n' "shopify-config-server" ;;
+    ProductService) printf '%s\n' "shopify-product-service" ;;
+    PaymentService) printf '%s\n' "shopify-payment-service" ;;
+    OrderService) printf '%s\n' "shopify-order-service" ;;
+    UserService) printf '%s\n' "shopify-user-service" ;;
+    CloudGateway) printf '%s\n' "shopify-cloud-gateway" ;;
+  esac
+}
+
 ensure_redis() {
+  if host_port_open "$REDIS_HOST" "$REDIS_PORT"; then
+    log "Redis already reachable at ${REDIS_HOST}:${REDIS_PORT}"
+    return 0
+  fi
+
   require_command docker
+  if ! docker_running; then
+    printf 'Docker is not running. Start Docker and retry, or start Redis locally on %s:%s.\n' "$REDIS_HOST" "$REDIS_PORT" >&2
+    exit 1
+  fi
   if container_running "$REDIS_CONTAINER"; then
     log "Redis container already running: ${REDIS_CONTAINER}"
   elif container_exists "$REDIS_CONTAINER"; then
@@ -147,6 +196,7 @@ ensure_mysql() {
 build_service() {
   local service="$1"
   local -a args=(clean install)
+  local mvnw="${ROOT_DIR}/${service}/mvnw"
   if [[ "$SKIP_TESTS" == "true" ]]; then
     args+=("-DskipTests")
   fi
@@ -154,7 +204,12 @@ build_service() {
   log "Building ${service}"
   (
     cd "${ROOT_DIR}/${service}"
-    ./mvnw "${args[@]}"
+    if [[ -x "$mvnw" ]]; then
+      "$mvnw" "${args[@]}"
+    else
+      require_command mvn
+      mvn "${args[@]}"
+    fi
   )
 }
 
@@ -173,7 +228,7 @@ jar_for_service() {
   local service="$1"
   find "${ROOT_DIR}/${service}/target" -maxdepth 1 -type f -name '*.jar' \
     ! -name '*-sources.jar' ! -name '*-javadoc.jar' ! -name '*.original' \
-    | head -n 1
+    -print -quit
 }
 
 pid_file_for() {
@@ -216,12 +271,72 @@ host_port_open() {
   (echo >"/dev/tcp/${host}/${port}") >/dev/null 2>&1
 }
 
+stop_stale_service_processes() {
+  local service="$1"
+  local service_target="${ROOT_DIR}/${service}/target/"
+  local pid args
+
+  while read -r pid args; do
+    if [[ -z "${pid:-}" || "$pid" == "$$" ]]; then
+      continue
+    fi
+
+    if [[ "$args" == *"java"* && "$args" == *"$service_target"*".jar"* ]]; then
+      log "Stopping stale ${service} process with PID ${pid}"
+      kill "$pid" >/dev/null 2>&1 || true
+      for _ in $(seq 1 30); do
+        if ! kill -0 "$pid" >/dev/null 2>&1; then
+          break
+        fi
+        sleep 1
+      done
+      if kill -0 "$pid" >/dev/null 2>&1; then
+        log "Force stopping stale ${service} process with PID ${pid}"
+        kill -9 "$pid" >/dev/null 2>&1 || true
+      fi
+    fi
+  done < <(ps -eo pid=,args=)
+}
+
+ensure_service_port_free() {
+  local service="$1"
+  local port="$2"
+  local container
+
+  if ! port_open "$port"; then
+    return 0
+  fi
+
+  container="$(container_for_service "$service")"
+  if [[ -n "$container" ]] && command -v docker >/dev/null 2>&1 && container_running "$container"; then
+    log "Stopping container ${container} because it is using port ${port}"
+    docker stop "$container" >/dev/null
+  fi
+
+  stop_stale_service_processes "$service"
+
+  if port_open "$port"; then
+    printf 'Port %s is already in use before starting %s.\n' "$port" "$service" >&2
+    printf 'Stop the process using that port and retry. Current listener:\n' >&2
+    ss -ltnp "sport = :${port}" >&2 || true
+    exit 1
+  fi
+}
+
 wait_for_port() {
   local service="$1"
   local port="$2"
+  local pid_file
+  pid_file="$(pid_file_for "$service")"
 
   log "Waiting for ${service} on port ${port}"
   for _ in $(seq 1 "$STARTUP_TIMEOUT"); do
+    if [[ -f "$pid_file" ]] && ! kill -0 "$(cat "$pid_file")" >/dev/null 2>&1; then
+      printf '%s exited before opening port %s. Last log lines:\n' "$service" "$port" >&2
+      tail -n 80 "${LOG_DIR}/${service}.log" >&2 || true
+      rm -f "$pid_file"
+      exit 1
+    fi
     if port_open "$port"; then
       return 0
     fi
@@ -240,9 +355,18 @@ start_service() {
   local db_name
   local -a env_vars=(
     "DB_HOST=${DB_HOST}"
+    "CONFIG_SERVER_URL=${CONFIG_SERVER_URL}"
     "EUREKA_SERVER_ADDRESS=${EUREKA_SERVER_ADDRESS}"
+    "EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_SERVER_ADDRESS}"
+    "SPRING_DATA_REDIS_HOST=${REDIS_HOST}"
+    "SPRING_DATA_REDIS_PORT=${REDIS_PORT}"
     "ZIPKIN_ENABLED=${ZIPKIN_ENABLED}"
     "ZIPKIN_ENDPOINT=${ZIPKIN_ENDPOINT}"
+    "IAM_JWT_ISSUER=${IAM_JWT_ISSUER}"
+    "IAM_JWT_AUDIENCE=${IAM_JWT_AUDIENCE}"
+    "IAM_JWT_SECRET=${IAM_JWT_SECRET}"
+    "IAM_ACCESS_TOKEN_TTL_MINUTES=${IAM_ACCESS_TOKEN_TTL_MINUTES}"
+    "IAM_REFRESH_TOKEN_TTL_DAYS=${IAM_REFRESH_TOKEN_TTL_DAYS}"
   )
 
   pid_file="$(pid_file_for "$service")"
@@ -251,10 +375,7 @@ start_service() {
     return 0
   fi
 
-  if port_open "$port"; then
-    printf 'Port %s is already in use before starting %s. Stop that process and retry.\n' "$port" "$service" >&2
-    exit 1
-  fi
+  ensure_service_port_free "$service" "$port"
 
   jar="$(jar_for_service "$service")"
   if [[ -z "$jar" ]]; then
@@ -289,11 +410,69 @@ start_services() {
   done
 }
 
+find_service_entry() {
+  local requested="$1"
+  local entry service port
+
+  for entry in "${SERVICES[@]}"; do
+    IFS=':' read -r service port <<<"$entry"
+    if [[ "$requested" == "$service" ]]; then
+      printf '%s:%s\n' "$service" "$port"
+      return 0
+    fi
+  done
+
+  printf 'Unknown service: %s\n' "$requested" >&2
+  printf 'Available services:\n' >&2
+  for entry in "${SERVICES[@]}"; do
+    IFS=':' read -r service _ <<<"$entry"
+    printf '  %s\n' "$service" >&2
+  done
+  exit 1
+}
+
+start_one_service() {
+  local entry service port
+
+  if [[ $# -ne 1 ]]; then
+    printf 'Usage: scripts/deploy-ecosystem.sh up <service>\n' >&2
+    exit 1
+  fi
+
+  ensure_dirs
+  ensure_mysql
+  ensure_redis
+  entry="$(find_service_entry "$1")"
+  IFS=':' read -r service port <<<"$entry"
+
+  if [[ -z "$(jar_for_service "$service")" ]]; then
+    build_service "$service"
+  fi
+
+  start_service "$service" "$port"
+  status
+}
+
 stop_services() {
   for ((i = ${#SERVICES[@]} - 1; i >= 0; i--)); do
     IFS=':' read -r service _ <<<"${SERVICES[$i]}"
     stop_service "$service"
   done
+}
+
+stop_one_service() {
+  local entry service
+
+  if [[ $# -ne 1 ]]; then
+    printf 'Usage: scripts/deploy-ecosystem.sh down <service>\n' >&2
+    exit 1
+  fi
+
+  ensure_dirs
+  entry="$(find_service_entry "$1")"
+  IFS=':' read -r service _ <<<"$entry"
+  stop_service "$service"
+  status
 }
 
 stop_service() {
@@ -328,6 +507,12 @@ stop_infra() {
   if ! command -v docker >/dev/null 2>&1; then
     return 0
   fi
+  for container in "${DOCKER_APP_CONTAINERS[@]}"; do
+    if container_running "$container"; then
+      log "Stopping container ${container}"
+      docker stop "$container" >/dev/null
+    fi
+  done
   if container_running "$REDIS_CONTAINER"; then
     log "Stopping container ${REDIS_CONTAINER}"
     docker stop "$REDIS_CONTAINER" >/dev/null
@@ -370,8 +555,10 @@ status() {
 
   if command -v docker >/dev/null 2>&1 && container_running "$REDIS_CONTAINER"; then
     printf '  %-18s running\n' "$REDIS_CONTAINER"
+  elif host_port_open "$REDIS_HOST" "$REDIS_PORT"; then
+    printf '  %-18s reachable %s:%s\n' "redis" "$REDIS_HOST" "$REDIS_PORT"
   else
-    printf '  %-18s stopped\n' "$REDIS_CONTAINER"
+    printf '  %-18s unreachable %s:%s\n' "redis" "$REDIS_HOST" "$REDIS_PORT"
   fi
 }
 
@@ -387,6 +574,7 @@ tail_logs() {
 start_all() {
   ensure_dirs
   stop_services
+  stop_infra
   clean_runtime_files
   build_all
   ensure_mysql
@@ -401,6 +589,12 @@ command="${1:-start}"
 case "$command" in
   start)
     start_all
+    ;;
+  up)
+    start_one_service "${2:-}"
+    ;;
+  down)
+    stop_one_service "${2:-}"
     ;;
   stop)
     ensure_dirs

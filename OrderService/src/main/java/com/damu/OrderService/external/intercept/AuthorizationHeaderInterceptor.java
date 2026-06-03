@@ -7,7 +7,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 @Configuration
-public class OAuthRequestInterceptor implements RequestInterceptor {
+public class AuthorizationHeaderInterceptor implements RequestInterceptor {
 
     private static final String AUTHORIZATION_HEADER = "Authorization";
 
