@@ -1,11 +1,16 @@
 package com.damu.CloudGateway.security;
 
+import com.damu.CloudGateway.model.ApiResponse;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.convert.converter.Converter;
+import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
@@ -15,8 +20,8 @@ import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder;
 import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.security.web.server.SecurityWebFilterChain;
-import org.springframework.security.web.server.authentication.HttpStatusServerEntryPoint;
 import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers;
+import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import javax.crypto.SecretKey;
@@ -57,13 +62,20 @@ public class GatewaySecurityConfig {
 
     @Bean
     @Order(2)
-    public SecurityWebFilterChain apiSecurityFilterChain(ServerHttpSecurity http) {
+    public SecurityWebFilterChain apiSecurityFilterChain(ServerHttpSecurity http, ObjectMapper objectMapper) {
         return http.csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(authorizeExchange -> authorizeExchange.anyExchange().authenticated())
                 .exceptionHandling(exceptionHandling -> exceptionHandling
-                        .authenticationEntryPoint(new HttpStatusServerEntryPoint(HttpStatus.UNAUTHORIZED)))
+                        .authenticationEntryPoint((exchange, exception) ->
+                                writeErrorResponse(exchange, objectMapper, HttpStatus.UNAUTHORIZED,
+                                        "Authentication is required", "AUTHENTICATION_REQUIRED"))
+                        .accessDeniedHandler((exchange, exception) ->
+                                writeErrorResponse(exchange, objectMapper, HttpStatus.FORBIDDEN,
+                                        "Access denied", "ACCESS_DENIED")))
                 .oauth2ResourceServer(oauth2 -> oauth2
-                        .authenticationEntryPoint(new HttpStatusServerEntryPoint(HttpStatus.UNAUTHORIZED))
+                        .authenticationEntryPoint((exchange, exception) ->
+                                writeErrorResponse(exchange, objectMapper, HttpStatus.UNAUTHORIZED,
+                                        "Invalid or missing token", "INVALID_TOKEN"))
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())))
                 .build();
     }
@@ -80,9 +92,33 @@ public class GatewaySecurityConfig {
 
     private List<SimpleGrantedAuthority> authorities(Jwt jwt) {
         List<SimpleGrantedAuthority> authorities = new ArrayList<>();
-        jwt.getClaimAsStringList("permissions").forEach(permission -> authorities.add(new SimpleGrantedAuthority(permission)));
-        jwt.getClaimAsStringList("roles").forEach(role -> authorities.add(new SimpleGrantedAuthority(role)));
+        List<String> permissions = jwt.getClaimAsStringList("permissions");
+        if (permissions != null) {
+            permissions.forEach(permission -> authorities.add(new SimpleGrantedAuthority(permission)));
+        }
+        List<String> roles = jwt.getClaimAsStringList("roles");
+        if (roles != null) {
+            roles.forEach(role -> authorities.add(new SimpleGrantedAuthority(role)));
+        }
         return authorities;
+    }
+
+    private Mono<Void> writeErrorResponse(
+            ServerWebExchange exchange,
+            ObjectMapper objectMapper,
+            HttpStatus status,
+            String message,
+            String errorCode) {
+        exchange.getResponse().setStatusCode(status);
+        exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
+        try {
+            byte[] bytes = objectMapper.writeValueAsBytes(
+                    ApiResponse.fail(message, status.value(), List.of(ApiResponse.ApiError.of(errorCode))));
+            DataBuffer buffer = exchange.getResponse().bufferFactory().wrap(bytes);
+            return exchange.getResponse().writeWith(Mono.just(buffer));
+        } catch (JsonProcessingException e) {
+            return exchange.getResponse().setComplete();
+        }
     }
 
     private String[] concat(String[] first, String[] second) {

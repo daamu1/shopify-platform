@@ -1,6 +1,7 @@
 package com.damu.UserService.controller;
 
 import com.damu.UserService.exception.UserServiceException;
+import com.damu.UserService.model.ApiResponse;
 import com.damu.UserService.model.AuthRequest;
 import com.damu.UserService.model.AuthResponse;
 import com.damu.UserService.model.ChangePasswordRequest;
@@ -12,12 +13,12 @@ import com.damu.UserService.model.VerifyEmailRequest;
 import com.damu.UserService.service.impl.AuthService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -32,56 +33,66 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@RequestBody AuthRequest request) {
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApiResponse<AuthResponse> register(@RequestBody AuthRequest request) {
         log.info("Local user registration requested");
-        return new ResponseEntity<>(authService.register(request), HttpStatus.CREATED);
+        return ApiResponse.ok("User registered successfully", HttpStatus.CREATED.value(), authService.register(request));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody AuthRequest request) {
+    @ResponseStatus(HttpStatus.OK)
+    public ApiResponse<AuthResponse> login(@RequestBody AuthRequest request) {
         log.info("Local user login requested");
-        return new ResponseEntity<>(authService.login(request), HttpStatus.OK);
+        return ApiResponse.ok("Login successful", HttpStatus.OK.value(), authService.login(request));
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<AuthResponse> refresh(@RequestBody RefreshTokenRequest request) {
-        return new ResponseEntity<>(authService.refresh(request), HttpStatus.OK);
+    @ResponseStatus(HttpStatus.OK)
+    public ApiResponse<AuthResponse> refresh(@RequestBody RefreshTokenRequest request) {
+        return ApiResponse.ok("Token refreshed successfully", HttpStatus.OK.value(), authService.refresh(request));
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(@RequestBody RefreshTokenRequest request) {
+    @ResponseStatus(HttpStatus.OK)
+    public ApiResponse<Void> logout(@RequestBody RefreshTokenRequest request) {
         authService.logout(request);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        return ApiResponse.ok("Logout successful", HttpStatus.OK.value());
     }
 
     @PostMapping("/forgot-password")
-    public ResponseEntity<TokenRequestResponse> forgotPassword(@RequestBody ForgotPasswordRequest request) {
-        return new ResponseEntity<>(authService.forgotPassword(request), HttpStatus.ACCEPTED);
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public ApiResponse<TokenRequestResponse> forgotPassword(@RequestBody ForgotPasswordRequest request) {
+        return ApiResponse.ok("Password reset token created", HttpStatus.ACCEPTED.value(), authService.forgotPassword(request));
     }
 
     @PostMapping("/reset-password")
-    public ResponseEntity<Void> resetPassword(@RequestBody ResetPasswordRequest request) {
+    @ResponseStatus(HttpStatus.OK)
+    public ApiResponse<Void> resetPassword(@RequestBody ResetPasswordRequest request) {
         authService.resetPassword(request);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        return ApiResponse.ok("Password reset successfully", HttpStatus.OK.value());
     }
 
     @PostMapping("/change-password")
-    public ResponseEntity<Void> changePassword(
+    @ResponseStatus(HttpStatus.OK)
+    public ApiResponse<Void> changePassword(
             @AuthenticationPrincipal Jwt jwt,
             @RequestBody ChangePasswordRequest request) {
         authService.changePassword(authenticatedUserId(jwt), request);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        return ApiResponse.ok("Password changed successfully", HttpStatus.OK.value());
     }
 
     @PostMapping("/email-verification-token")
-    public ResponseEntity<TokenRequestResponse> createEmailVerificationToken(@AuthenticationPrincipal Jwt jwt) {
-        return new ResponseEntity<>(authService.createEmailVerificationToken(authenticatedUserId(jwt)), HttpStatus.CREATED);
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApiResponse<TokenRequestResponse> createEmailVerificationToken(@AuthenticationPrincipal Jwt jwt) {
+        return ApiResponse.ok("Email verification token created", HttpStatus.CREATED.value(),
+                authService.createEmailVerificationToken(authenticatedUserId(jwt)));
     }
 
     @PostMapping("/verify-email")
-    public ResponseEntity<Void> verifyEmail(@RequestBody VerifyEmailRequest request) {
+    @ResponseStatus(HttpStatus.OK)
+    public ApiResponse<Void> verifyEmail(@RequestBody VerifyEmailRequest request) {
         authService.verifyEmail(request);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        return ApiResponse.ok("Email verified successfully", HttpStatus.OK.value());
     }
 
     private long authenticatedUserId(Jwt jwt) {

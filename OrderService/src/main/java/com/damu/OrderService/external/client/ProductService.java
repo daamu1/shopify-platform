@@ -1,9 +1,9 @@
 package com.damu.OrderService.external.client;
 
 import com.damu.OrderService.exception.CustomException;
+import com.damu.OrderService.model.ApiResponse;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -13,10 +13,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 public interface ProductService {
 
     @PutMapping("/reduceQuantity/{id}")
-    ResponseEntity<Void> reduceQuantity(@PathVariable("id") long productId, @RequestParam long quantity);
+    ApiResponse<Void> reduceQuantity(@PathVariable("id") long productId, @RequestParam long quantity);
 
 
-    default ResponseEntity<Void> fallback(Exception e) {
+    default ApiResponse<Void> fallback(Exception e) {
         throw new CustomException("Product Service is not available", "UNAVAILABLE", 500);
     }
 

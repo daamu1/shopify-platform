@@ -33,8 +33,14 @@ public class JwtSecurityConfig {
 
     private List<SimpleGrantedAuthority> authorities(Jwt jwt) {
         List<SimpleGrantedAuthority> authorities = new ArrayList<>();
-        jwt.getClaimAsStringList("permissions").forEach(permission -> authorities.add(new SimpleGrantedAuthority(permission)));
-        jwt.getClaimAsStringList("roles").forEach(role -> authorities.add(new SimpleGrantedAuthority(role)));
+        List<String> permissions = jwt.getClaimAsStringList("permissions");
+        if (permissions != null) {
+            permissions.forEach(permission -> authorities.add(new SimpleGrantedAuthority(permission)));
+        }
+        List<String> roles = jwt.getClaimAsStringList("roles");
+        if (roles != null) {
+            roles.forEach(role -> authorities.add(new SimpleGrantedAuthority(role)));
+        }
         return authorities;
     }
 }
