@@ -43,7 +43,8 @@ public class GatewaySecurityConfig {
             "/order/v3/api-docs",
             "/payment/v3/api-docs",
             "/product/v3/api-docs",
-            "/user/v3/api-docs"
+            "/user/v3/api-docs",
+            "/notification/v3/api-docs"
     };
 
     private static final String[] PUBLIC_PATHS = {

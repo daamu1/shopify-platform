@@ -10,6 +10,17 @@ services:
       timeout: 3s
       retries: 10
 
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: shopify-rabbitmq
+    network_mode: host
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
   service-registry:
     build:
       context: .
@@ -148,6 +159,39 @@ services:
       config-server:
         condition: service_healthy
 
+  notification-service:
+    build:
+      context: .
+      args:
+        SERVICE: NotificationService
+    image: shopify/notification-service:local
+    container_name: shopify-notification-service
+    network_mode: host
+    restart: unless-stopped
+    environment:
+      IAM_JWT_ISSUER: ${IAM_JWT_ISSUER:-http://localhost:8083}
+      IAM_JWT_AUDIENCE: ${IAM_JWT_AUDIENCE:-shop-api}
+      IAM_JWT_SECRET: ${IAM_JWT_SECRET:-2MYI7CSmDvVcNU3IdTyE/rpzUGNkR2cPeabl5+/nuHdukRpVTbiKlwoWRfiZMbKf216DVmqzmnjLyAhgFOstUA==}
+      CONFIG_SERVER_URL: http://localhost:9296
+      SPRING_DATASOURCE_URL: ${NOTIFICATION_DB_URL:-jdbc:mysql://${DB_HOST:-localhost}:${DB_PORT:-3306}/notificationdb}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-damu}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-password123}
+      RABBITMQ_HOST: localhost
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-guest}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY:-}
+      NOTIFICATION_EMAIL_FROM: ${NOTIFICATION_EMAIL_FROM:-no-reply@shop.local}
+      EUREKA_SERVER_ADDRESS: http://localhost:8761/eureka
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://localhost:8761/eureka
+      ZIPKIN_ENABLED: ${ZIPKIN_ENABLED:-false}
+      ZIPKIN_ENDPOINT: ${ZIPKIN_ENDPOINT:-http://zipkin:9411/api/v2/spans}
+    depends_on:
+      config-server:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
   cloud-gateway:
     build:
       context: .
@@ -173,3 +217,5 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      notification-service:
+        condition: service_started

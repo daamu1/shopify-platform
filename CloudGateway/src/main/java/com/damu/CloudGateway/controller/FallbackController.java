@@ -39,4 +39,11 @@ public class FallbackController {
         return ApiResponse.fail("User Service is down", HttpStatus.SERVICE_UNAVAILABLE.value());
     }
 
+    @GetMapping("/notificationServiceFallBack")
+    @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
+    public ApiResponse<Void> notificationServiceFallback() {
+        log.warn("Gateway fallback triggered service=NOTIFICATION-SERVICE");
+        return ApiResponse.fail("Notification Service is down", HttpStatus.SERVICE_UNAVAILABLE.value());
+    }
+
 }

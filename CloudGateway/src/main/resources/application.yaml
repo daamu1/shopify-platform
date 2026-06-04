@@ -41,6 +41,8 @@ springdoc:
         url: /product/v3/api-docs
       - name: User Service
         url: /user/v3/api-docs
+      - name: Notification Service
+        url: /notification/v3/api-docs
 
 spring:
   application:
@@ -78,6 +80,12 @@ spring:
               uri: lb://USER-SERVICE
               predicates:
                 - Path=/user/v3/api-docs
+              filters:
+                - StripPrefix=1
+            - id: NOTIFICATION-SERVICE-OPENAPI
+              uri: lb://NOTIFICATION-SERVICE
+              predicates:
+                - Path=/notification/v3/api-docs
               filters:
                 - StripPrefix=1
             - id: ORDER-SERVICE
@@ -132,6 +140,20 @@ spring:
                   args:
                     redis-rate-limiter.replenishRate: 2
                     redis-rate-limiter.burstCapacity: 4
+            - id: NOTIFICATION-SERVICE
+              uri: lb://NOTIFICATION-SERVICE
+              predicates:
+                - Path=/notification/**
+              filters:
+                - StripPrefix=1
+                - name: CircuitBreaker
+                  args:
+                    name: NOTIFICATION-SERVICE
+                    fallbackUri: forward:/notificationServiceFallBack
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 5
+                    redis-rate-limiter.burstCapacity: 10
 
 resilience4j:
   timelimiter:
@@ -144,3 +166,5 @@ resilience4j:
         timeout-duration: 5s
       USER-SERVICE:
         timeout-duration: 5s
+      NOTIFICATION-SERVICE:
+        timeout-duration: 8s
