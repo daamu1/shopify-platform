@@ -11,8 +11,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
-@RestControllerAdvice
 @Log4j2
+@RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(UserServiceException.class)

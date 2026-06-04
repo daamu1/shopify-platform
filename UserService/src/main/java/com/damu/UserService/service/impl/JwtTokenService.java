@@ -2,6 +2,7 @@ package com.damu.UserService.service.impl;
 
 import com.damu.UserService.config.JwtProperties;
 import com.damu.UserService.entity.ApplicationUser;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
@@ -15,15 +16,11 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class JwtTokenService {
 
     private final JwtEncoder jwtEncoder;
     private final JwtProperties jwtProperties;
-
-    public JwtTokenService(JwtEncoder jwtEncoder, JwtProperties jwtProperties) {
-        this.jwtEncoder = jwtEncoder;
-        this.jwtProperties = jwtProperties;
-    }
 
     public TokenIssue issueAccessToken(ApplicationUser user) {
         Instant issuedAt = Instant.now();

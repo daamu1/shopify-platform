@@ -22,6 +22,7 @@ import com.damu.UserService.repository.RefreshTokenRepository;
 import com.damu.UserService.service.AuthService;
 import com.damu.UserService.service.NotificationEventPublisher;
 import com.damu.UserService.util.AuthConstants;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -39,6 +40,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
     private final ApplicationUserRepository userRepository;
@@ -57,23 +59,7 @@ public class AuthServiceImpl implements AuthService {
     @Value("${app.auth.password-reset-url}")
     private String passwordResetUrl;
 
-    public AuthServiceImpl(ApplicationUserRepository userRepository,
-                           RefreshTokenRepository refreshTokenRepository,
-                           PasswordResetTokenRepository passwordResetTokenRepository,
-                           EmailVerificationTokenRepository emailVerificationTokenRepository,
-                           NotificationEventPublisher notificationEventPublisher,
-                           PasswordEncoder passwordEncoder,
-                           JwtTokenService jwtTokenService,
-                           JwtProperties jwtProperties) {
-        this.userRepository = userRepository;
-        this.refreshTokenRepository = refreshTokenRepository;
-        this.passwordResetTokenRepository = passwordResetTokenRepository;
-        this.emailVerificationTokenRepository = emailVerificationTokenRepository;
-        this.notificationEventPublisher = notificationEventPublisher;
-        this.passwordEncoder = passwordEncoder;
-        this.jwtTokenService = jwtTokenService;
-        this.jwtProperties = jwtProperties;
-    }
+
 
     @Transactional
     @Override

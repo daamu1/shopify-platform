@@ -21,6 +21,7 @@ import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
@@ -94,11 +95,11 @@ public class GatewaySecurityConfig {
     private List<SimpleGrantedAuthority> authorities(Jwt jwt) {
         List<SimpleGrantedAuthority> authorities = new ArrayList<>();
         List<String> permissions = jwt.getClaimAsStringList("permissions");
-        if (permissions != null) {
+        if (!CollectionUtils.isEmpty(permissions)) {
             permissions.forEach(permission -> authorities.add(new SimpleGrantedAuthority(permission)));
         }
         List<String> roles = jwt.getClaimAsStringList("roles");
-        if (roles != null) {
+        if (!CollectionUtils.isEmpty(roles)) {
             roles.forEach(role -> authorities.add(new SimpleGrantedAuthority(role)));
         }
         return authorities;

@@ -22,8 +22,7 @@ public class ProductController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<Long> addProduct(@RequestBody ProductRequest productRequest) {
-        log.info("Add product request received name={} quantity={} price={}",
-                productRequest.getName(), productRequest.getQuantity(), productRequest.getPrice());
+        log.info("Add product request received name={} quantity={} price={}", productRequest.getName(), productRequest.getQuantity(), productRequest.getPrice());
         long productId = productService.addProduct(productRequest);
         log.info("Add product request completed productId={}", productId);
         return ApiResponse.ok("Product created successfully", HttpStatus.CREATED.value(), productId);

@@ -45,10 +45,7 @@ public class WebSecurityConfig {
     };
 
     @Bean
-    public SecurityFilterChain securityFilterChain(
-            HttpSecurity http,
-            Converter<Jwt, AbstractAuthenticationToken> jwtAuthenticationConverter,
-            ObjectMapper objectMapper) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, Converter<Jwt, AbstractAuthenticationToken> jwtAuthenticationConverter, ObjectMapper objectMapper) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorizeRequest -> authorizeRequest
@@ -56,17 +53,11 @@ public class WebSecurityConfig {
                         .requestMatchers(PUBLIC_PATHS).permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(exceptionHandling -> exceptionHandling
-                        .authenticationEntryPoint((request, response, authException) ->
-                                writeErrorResponse(response, objectMapper, HttpStatus.UNAUTHORIZED,
-                                        "Authentication is required", "AUTHENTICATION_REQUIRED"))
-                        .accessDeniedHandler((request, response, accessDeniedException) ->
-                                writeErrorResponse(response, objectMapper, HttpStatus.FORBIDDEN,
-                                        "Access denied", "ACCESS_DENIED")))
+                        .authenticationEntryPoint((request, response, authException) -> writeErrorResponse(response, objectMapper, HttpStatus.UNAUTHORIZED, "Authentication is required", "AUTHENTICATION_REQUIRED"))
+                        .accessDeniedHandler((request, response, accessDeniedException) -> writeErrorResponse(response, objectMapper, HttpStatus.FORBIDDEN, "Access denied", "ACCESS_DENIED")))
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter))
-                        .authenticationEntryPoint((request, response, authException) ->
-                                writeErrorResponse(response, objectMapper, HttpStatus.UNAUTHORIZED,
-                                        "Invalid or missing token", "INVALID_TOKEN")));
+                        .authenticationEntryPoint((request, response, authException) -> writeErrorResponse(response, objectMapper, HttpStatus.UNAUTHORIZED, "Invalid or missing token", "INVALID_TOKEN")));
         return http.build();
     }
 
@@ -75,15 +66,9 @@ public class WebSecurityConfig {
         return new BCryptPasswordEncoder(12);
     }
 
-    private void writeErrorResponse(
-            HttpServletResponse response,
-            ObjectMapper objectMapper,
-            HttpStatus status,
-            String message,
-            String errorCode) throws IOException {
+    private void writeErrorResponse(HttpServletResponse response, ObjectMapper objectMapper, HttpStatus status, String message, String errorCode) throws IOException {
         response.setStatus(status.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        objectMapper.writeValue(response.getWriter(),
-                ApiResponse.fail(message, status.value(), List.of(ApiResponse.ApiError.of(errorCode))));
+        objectMapper.writeValue(response.getWriter(), ApiResponse.fail(message, status.value(), List.of(ApiResponse.ApiError.of(errorCode))));
     }
 }

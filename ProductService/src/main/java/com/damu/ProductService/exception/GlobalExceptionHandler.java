@@ -17,15 +17,13 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ApiResponse<Void> handleProductServiceException(ProductServiceCustomException exception) {
         log.warn("Product service exception errorCode={} message={}", exception.getErrorCode(), exception.getMessage());
-        return ApiResponse.fail(exception.getMessage(), HttpStatus.NOT_FOUND.value(),
-                List.of(ApiResponse.ApiError.of(exception.getErrorCode())));
+        return ApiResponse.fail(exception.getMessage(), HttpStatus.NOT_FOUND.value(), List.of(ApiResponse.ApiError.of(exception.getErrorCode())));
     }
 
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ApiResponse<Void> handleException(Exception exception) {
         log.error("Product service unexpected exception message={}", exception.getMessage(), exception);
-        return ApiResponse.fail("Internal Server Error", HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                List.of(ApiResponse.ApiError.of("INTERNAL_SERVER_ERROR")));
+        return ApiResponse.fail("Internal Server Error", HttpStatus.INTERNAL_SERVER_ERROR.value(), List.of(ApiResponse.ApiError.of("INTERNAL_SERVER_ERROR")));
     }
 }

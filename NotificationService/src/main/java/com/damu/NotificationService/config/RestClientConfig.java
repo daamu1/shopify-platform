@@ -11,9 +11,7 @@ import org.springframework.web.client.RestClient;
 public class RestClientConfig {
 
     @Bean
-    public RestClient sendGridRestClient(
-            @Value("${app.notification.sendgrid.base-url}") String baseUrl,
-            @Value("${app.notification.sendgrid.api-key}") String apiKey) {
+    public RestClient sendGridRestClient(@Value("${app.notification.sendgrid.base-url}") String baseUrl, @Value("${app.notification.sendgrid.api-key}") String apiKey) {
         return RestClient.builder()
                 .baseUrl(baseUrl)
                 .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)

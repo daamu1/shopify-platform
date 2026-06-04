@@ -7,6 +7,7 @@ import com.damu.UserService.model.UserRegistrationRequest;
 import com.damu.UserService.repository.ApplicationUserRepository;
 import com.damu.UserService.service.UserService;
 import com.damu.UserService.util.AuthConstants;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,13 +17,10 @@ import java.time.Instant;
 
 @Service
 @Log4j2
+@RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
     private final ApplicationUserRepository applicationUserRepository;
-
-    public UserServiceImpl(ApplicationUserRepository applicationUserRepository) {
-        this.applicationUserRepository = applicationUserRepository;
-    }
 
     @Override
     @Transactional

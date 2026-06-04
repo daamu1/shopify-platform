@@ -45,13 +45,7 @@ public class NotificationOrchestratorImpl implements NotificationOrchestrator {
         }
     }
 
-    private void sendForChannel(
-            String eventId,
-            String eventType,
-            String userId,
-            NotificationChannel channel,
-            String recipient,
-            Map<String, Object> data) {
+    private void sendForChannel(String eventId, String eventType, String userId, NotificationChannel channel, String recipient,Map<String, Object> data) {
         NotificationTemplate template = templateService.getActiveTemplate(eventType, channel);
         String subject = templateRenderer.render(template.getSubjectTemplate(), data);
         String body = templateRenderer.render(template.getBodyTemplate(), data);

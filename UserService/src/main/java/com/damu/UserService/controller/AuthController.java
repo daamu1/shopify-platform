@@ -11,6 +11,7 @@ import com.damu.UserService.model.ResetPasswordRequest;
 import com.damu.UserService.model.TokenRequestResponse;
 import com.damu.UserService.model.VerifyEmailRequest;
 import com.damu.UserService.service.AuthService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -21,17 +22,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+@Log4j2
 @RestController
 @RequestMapping("/auth")
-@Log4j2
+@RequiredArgsConstructor
 public class AuthController {
 
     private final AuthService authService;
-
-    public AuthController(AuthService authService) {
-        this.authService = authService;
-    }
-
+    
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<AuthResponse> register(@RequestBody AuthRequest request) {
@@ -74,9 +72,7 @@ public class AuthController {
 
     @PostMapping("/change-password")
     @ResponseStatus(HttpStatus.OK)
-    public ApiResponse<Void> changePassword(
-            @AuthenticationPrincipal Jwt jwt,
-            @RequestBody ChangePasswordRequest request) {
+    public ApiResponse<Void> changePassword(@AuthenticationPrincipal Jwt jwt, @RequestBody ChangePasswordRequest request) {
         authService.changePassword(authenticatedUserId(jwt), request);
         return ApiResponse.ok("Password changed successfully", HttpStatus.OK.value());
     }
@@ -84,8 +80,7 @@ public class AuthController {
     @PostMapping("/email-verification-token")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<TokenRequestResponse> createEmailVerificationToken(@AuthenticationPrincipal Jwt jwt) {
-        return ApiResponse.ok("Email verification token created", HttpStatus.CREATED.value(),
-                authService.createEmailVerificationToken(authenticatedUserId(jwt)));
+        return ApiResponse.ok("Email verification token created", HttpStatus.CREATED.value(), authService.createEmailVerificationToken(authenticatedUserId(jwt)));
     }
 
     @PostMapping("/verify-email")
