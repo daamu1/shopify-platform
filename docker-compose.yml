@@ -151,12 +151,19 @@ services:
       SPRING_DATASOURCE_URL: ${USER_DB_URL:-jdbc:mysql://${DB_HOST:-localhost}:${DB_PORT:-3306}/userdb}
       SPRING_DATASOURCE_USERNAME: ${DB_USER:-damu}
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-password123}
+      RABBITMQ_HOST: localhost
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-guest}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+      EMAIL_VERIFICATION_URL: ${EMAIL_VERIFICATION_URL:-http://localhost:9090/user/verify-email}
       EUREKA_SERVER_ADDRESS: http://localhost:8761/eureka
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://localhost:8761/eureka
       ZIPKIN_ENABLED: ${ZIPKIN_ENABLED:-false}
       ZIPKIN_ENDPOINT: ${ZIPKIN_ENDPOINT:-http://zipkin:9411/api/v2/spans}
     depends_on:
       config-server:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
 
   notification-service:

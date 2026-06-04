@@ -10,7 +10,7 @@ import com.damu.UserService.model.RefreshTokenRequest;
 import com.damu.UserService.model.ResetPasswordRequest;
 import com.damu.UserService.model.TokenRequestResponse;
 import com.damu.UserService.model.VerifyEmailRequest;
-import com.damu.UserService.service.impl.AuthService;
+import com.damu.UserService.service.AuthService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;

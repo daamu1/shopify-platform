@@ -10,6 +10,7 @@ import com.damu.UserService.model.AuthRequest;
 import com.damu.UserService.model.AuthResponse;
 import com.damu.UserService.model.ChangePasswordRequest;
 import com.damu.UserService.model.ForgotPasswordRequest;
+import com.damu.UserService.model.NotificationEvent;
 import com.damu.UserService.model.RefreshTokenRequest;
 import com.damu.UserService.model.ResetPasswordRequest;
 import com.damu.UserService.model.TokenRequestResponse;
@@ -18,6 +19,10 @@ import com.damu.UserService.repository.ApplicationUserRepository;
 import com.damu.UserService.repository.EmailVerificationTokenRepository;
 import com.damu.UserService.repository.PasswordResetTokenRepository;
 import com.damu.UserService.repository.RefreshTokenRepository;
+import com.damu.UserService.service.AuthService;
+import com.damu.UserService.service.NotificationEventPublisher;
+import com.damu.UserService.util.AuthConstants;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,42 +35,45 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.HexFormat;
+import java.util.Map;
+import java.util.UUID;
 
 @Service
-public class AuthService {
-
-    private static final String DEFAULT_ROLE = "CUSTOMER";
-    private static final int MAX_FAILED_LOGIN_ATTEMPTS = 5;
-    private static final long LOCK_MINUTES = 15;
-    private static final long PASSWORD_RESET_TOKEN_MINUTES = 30;
-    private static final long EMAIL_VERIFICATION_TOKEN_HOURS = 24;
+public class AuthServiceImpl implements AuthService {
 
     private final ApplicationUserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final EmailVerificationTokenRepository emailVerificationTokenRepository;
+    private final NotificationEventPublisher notificationEventPublisher;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenService jwtTokenService;
     private final JwtProperties jwtProperties;
     private final SecureRandom secureRandom = new SecureRandom();
 
-    public AuthService(ApplicationUserRepository userRepository,
-                       RefreshTokenRepository refreshTokenRepository,
-                       PasswordResetTokenRepository passwordResetTokenRepository,
-                       EmailVerificationTokenRepository emailVerificationTokenRepository,
-                       PasswordEncoder passwordEncoder,
-                       JwtTokenService jwtTokenService,
-                       JwtProperties jwtProperties) {
+    @Value("${app.auth.email-verification-url}")
+    private String emailVerificationUrl;
+
+    public AuthServiceImpl(ApplicationUserRepository userRepository,
+                           RefreshTokenRepository refreshTokenRepository,
+                           PasswordResetTokenRepository passwordResetTokenRepository,
+                           EmailVerificationTokenRepository emailVerificationTokenRepository,
+                           NotificationEventPublisher notificationEventPublisher,
+                           PasswordEncoder passwordEncoder,
+                           JwtTokenService jwtTokenService,
+                           JwtProperties jwtProperties) {
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.passwordResetTokenRepository = passwordResetTokenRepository;
         this.emailVerificationTokenRepository = emailVerificationTokenRepository;
+        this.notificationEventPublisher = notificationEventPublisher;
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenService = jwtTokenService;
         this.jwtProperties = jwtProperties;
     }
 
     @Transactional
+    @Override
     public AuthResponse register(AuthRequest request) {
         validateCredentialsRequest(request);
         userRepository.findByEmail(normalizeEmail(request.getEmail()))
@@ -80,7 +88,7 @@ public class AuthService {
                 .email(normalizeEmail(request.getEmail()))
                 .fullName(request.getFullName())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
-                .role(DEFAULT_ROLE)
+                .role(AuthConstants.DEFAULT_ROLE)
                 .enabled(true)
                 .emailVerified(false)
                 .accountLocked(false)
@@ -89,10 +97,15 @@ public class AuthService {
                 .updatedAt(now)
                 .build();
 
-        return issueTokens(userRepository.save(user), request.getDeviceId());
+        ApplicationUser savedUser = userRepository.save(user);
+        String verificationToken = createEmailVerificationToken(savedUser);
+        publishUserRegisteredEvent(savedUser, verificationToken);
+
+        return issueTokens(savedUser, request.getDeviceId());
     }
 
     @Transactional
+    @Override
     public AuthResponse login(AuthRequest request) {
         validateCredentialsRequest(request);
         ApplicationUser user = userRepository.findByEmail(normalizeEmail(request.getEmail()))
@@ -111,10 +124,12 @@ public class AuthService {
         user.setLockedUntil(null);
         user.setUpdatedAt(Instant.now());
         userRepository.save(user);
+        publishUserLoggedInEvent(user, request.getDeviceId());
         return issueTokens(user, request.getDeviceId());
     }
 
     @Transactional
+    @Override
     public AuthResponse refresh(RefreshTokenRequest request) {
         if (request == null || !StringUtils.hasText(request.getRefreshToken())) {
             throw new UserServiceException("refreshToken is required", "INVALID_REFRESH_TOKEN", 400);
@@ -137,6 +152,7 @@ public class AuthService {
     }
 
     @Transactional
+    @Override
     public void logout(RefreshTokenRequest request) {
         if (request == null || !StringUtils.hasText(request.getRefreshToken())) {
             return;
@@ -149,6 +165,7 @@ public class AuthService {
     }
 
     @Transactional
+    @Override
     public TokenRequestResponse forgotPassword(ForgotPasswordRequest request) {
         if (request == null || !StringUtils.hasText(request.getEmail())) {
             throw new UserServiceException("email is required", "INVALID_PASSWORD_RESET_REQUEST", 400);
@@ -166,7 +183,7 @@ public class AuthService {
                 .user(user)
                 .tokenHash(hashToken(resetToken))
                 .createdAt(Instant.now())
-                .expiresAt(Instant.now().plus(PASSWORD_RESET_TOKEN_MINUTES, ChronoUnit.MINUTES))
+                .expiresAt(Instant.now().plus(AuthConstants.PASSWORD_RESET_TOKEN_MINUTES, ChronoUnit.MINUTES))
                 .build());
 
         return TokenRequestResponse.builder()
@@ -176,6 +193,7 @@ public class AuthService {
     }
 
     @Transactional
+    @Override
     public void resetPassword(ResetPasswordRequest request) {
         if (request == null || !StringUtils.hasText(request.getToken()) || !StringUtils.hasText(request.getNewPassword())) {
             throw new UserServiceException("token and newPassword are required", "INVALID_PASSWORD_RESET_REQUEST", 400);
@@ -201,6 +219,7 @@ public class AuthService {
     }
 
     @Transactional
+    @Override
     public void changePassword(long userId, ChangePasswordRequest request) {
         if (request == null || !StringUtils.hasText(request.getCurrentPassword()) || !StringUtils.hasText(request.getNewPassword())) {
             throw new UserServiceException("currentPassword and newPassword are required", "INVALID_CHANGE_PASSWORD_REQUEST", 400);
@@ -219,6 +238,7 @@ public class AuthService {
     }
 
     @Transactional
+    @Override
     public TokenRequestResponse createEmailVerificationToken(long userId) {
         ApplicationUser user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserServiceException("User profile not found", "USER_NOT_FOUND", 404));
@@ -229,12 +249,7 @@ public class AuthService {
         }
 
         String verificationToken = generateOpaqueToken();
-        emailVerificationTokenRepository.save(EmailVerificationToken.builder()
-                .user(user)
-                .tokenHash(hashToken(verificationToken))
-                .createdAt(Instant.now())
-                .expiresAt(Instant.now().plus(EMAIL_VERIFICATION_TOKEN_HOURS, ChronoUnit.HOURS))
-                .build());
+        saveEmailVerificationToken(user, verificationToken);
 
         return TokenRequestResponse.builder()
                 .message("Email verification token issued")
@@ -243,6 +258,7 @@ public class AuthService {
     }
 
     @Transactional
+    @Override
     public void verifyEmail(VerifyEmailRequest request) {
         if (request == null || !StringUtils.hasText(request.getToken())) {
             throw new UserServiceException("token is required", "INVALID_EMAIL_VERIFICATION_REQUEST", 400);
@@ -294,6 +310,9 @@ public class AuthService {
         if (request == null || !StringUtils.hasText(request.getEmail()) || !StringUtils.hasText(request.getPassword())) {
             throw new UserServiceException("email and password are required", "INVALID_AUTH_REQUEST", 400);
         }
+        if (!isValidEmail(request.getEmail())) {
+            throw new UserServiceException("email must be a valid email address", "INVALID_EMAIL", 400);
+        }
         if (request.getPassword().length() < 8) {
             throw new UserServiceException("password must be at least 8 characters", "WEAK_PASSWORD", 400);
         }
@@ -320,9 +339,9 @@ public class AuthService {
 
     private void recordFailedLogin(ApplicationUser user) {
         user.setFailedLoginAttempts(user.getFailedLoginAttempts() + 1);
-        if (user.getFailedLoginAttempts() >= MAX_FAILED_LOGIN_ATTEMPTS) {
+        if (user.getFailedLoginAttempts() >= AuthConstants.MAX_FAILED_LOGIN_ATTEMPTS) {
             user.setAccountLocked(true);
-            user.setLockedUntil(Instant.now().plus(LOCK_MINUTES, ChronoUnit.MINUTES));
+            user.setLockedUntil(Instant.now().plus(AuthConstants.LOCK_MINUTES, ChronoUnit.MINUTES));
         }
         user.setUpdatedAt(Instant.now());
         userRepository.save(user);
@@ -330,6 +349,61 @@ public class AuthService {
 
     private String normalizeEmail(String email) {
         return email.trim().toLowerCase();
+    }
+
+    private boolean isValidEmail(String email) {
+        return StringUtils.hasText(email) && AuthConstants.EMAIL_PATTERN.matcher(email.trim()).matches();
+    }
+
+    private String createEmailVerificationToken(ApplicationUser user) {
+        String verificationToken = generateOpaqueToken();
+        saveEmailVerificationToken(user, verificationToken);
+        return verificationToken;
+    }
+
+    private void saveEmailVerificationToken(ApplicationUser user, String verificationToken) {
+        Instant now = Instant.now();
+        emailVerificationTokenRepository.save(EmailVerificationToken.builder()
+                .user(user)
+                .tokenHash(hashToken(verificationToken))
+                .createdAt(now)
+                .expiresAt(now.plus(AuthConstants.EMAIL_VERIFICATION_TOKEN_HOURS, ChronoUnit.HOURS))
+                .build());
+    }
+
+    private void publishUserRegisteredEvent(ApplicationUser user, String verificationToken) {
+        notificationEventPublisher.publish(new NotificationEvent(
+                "user_registered_%s_%s".formatted(user.getUserId(), UUID.randomUUID()),
+                AuthConstants.USER_REGISTERED_EVENT,
+                String.valueOf(user.getUserId()),
+                Map.of(
+                        "email", user.getEmail(),
+                        "fullName", user.getFullName() == null ? "" : user.getFullName(),
+                        "verificationToken", verificationToken,
+                        "verificationUrl", buildVerificationUrl(verificationToken)
+                ),
+                Instant.now()
+        ));
+    }
+
+    private void publishUserLoggedInEvent(ApplicationUser user, String deviceId) {
+        notificationEventPublisher.publish(new NotificationEvent(
+                "user_logged_in_%s_%s".formatted(user.getUserId(), UUID.randomUUID()),
+                AuthConstants.USER_LOGGED_IN_EVENT,
+                String.valueOf(user.getUserId()),
+                Map.of(
+                        "email", user.getEmail(),
+                        "fullName", user.getFullName() == null ? "" : user.getFullName(),
+                        "loginTime", Instant.now().toString(),
+                        "deviceId", deviceId == null ? "" : deviceId
+                ),
+                Instant.now()
+        ));
+    }
+
+    private String buildVerificationUrl(String verificationToken) {
+        String separator = emailVerificationUrl.contains("?") ? "&" : "?";
+        return emailVerificationUrl + separator + "token=" + verificationToken;
     }
 
     private String generateRefreshToken() {
