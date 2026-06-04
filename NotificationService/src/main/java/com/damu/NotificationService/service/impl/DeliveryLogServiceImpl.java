@@ -8,8 +8,9 @@ import com.damu.NotificationService.model.NotificationStatus;
 import com.damu.NotificationService.repository.NotificationLogRepository;
 import com.damu.NotificationService.service.DeliveryLogService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DuplicateKeyException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -23,6 +24,11 @@ public class DeliveryLogServiceImpl implements DeliveryLogService {
 
     @Override
     public NotificationLog createPending(SendNotificationCommand command) {
+        return repository.findByEventIdAndUserIdAndChannel(command.eventId(), command.userId(), command.channel())
+                .orElseGet(() -> createNewPending(command));
+    }
+
+    private NotificationLog createNewPending(SendNotificationCommand command) {
         Instant now = Instant.now();
         NotificationLog log = NotificationLog.builder()
                 .eventId(command.eventId())
@@ -40,14 +46,15 @@ public class DeliveryLogServiceImpl implements DeliveryLogService {
                 .updatedAt(now)
                 .build();
         try {
-            return repository.save(log);
-        } catch (DuplicateKeyException exception) {
+            return repository.saveAndFlush(log);
+        } catch (DataIntegrityViolationException exception) {
             return repository.findByEventIdAndUserIdAndChannel(command.eventId(), command.userId(), command.channel())
                     .orElseThrow(() -> exception);
         }
     }
 
     @Override
+    @Transactional
     public NotificationLog markSent(SendNotificationCommand command, DeliveryResult result) {
         NotificationLog log = repository.findByEventIdAndUserIdAndChannel(command.eventId(), command.userId(), command.channel())
                 .orElseThrow();
@@ -68,6 +75,7 @@ public class DeliveryLogServiceImpl implements DeliveryLogService {
     }
 
     @Override
+    @Transactional
     public NotificationLog markFailed(SendNotificationCommand command, Throwable error) {
         NotificationLog log = repository.findByEventIdAndUserIdAndChannel(command.eventId(), command.userId(), command.channel())
                 .orElseThrow();
