@@ -11,9 +11,10 @@ public final class AuthConstants {
     public static final long EMAIL_VERIFICATION_TOKEN_HOURS = 24;
     public static final String USER_REGISTERED_EVENT = "user_registered";
     public static final String USER_LOGGED_IN_EVENT = "user_logged_in";
-    public static final Pattern EMAIL_PATTERN = Pattern.compile(
-            "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$",
-            Pattern.CASE_INSENSITIVE);
+    public static final String PASSWORD_RESET_REQUESTED_EVENT = "password_reset_requested";
+    public static final String PASSWORD_RESET_COMPLETED_EVENT = "password_reset_completed";
+    public static final String PASSWORD_CHANGED_EVENT = "password_changed";
+    public static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$", Pattern.CASE_INSENSITIVE);
 
     private AuthConstants() {
     }

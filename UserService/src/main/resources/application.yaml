@@ -39,6 +39,7 @@ spring:
 app:
   auth:
     email-verification-url: ${EMAIL_VERIFICATION_URL:http://localhost:9090/user/verify-email}
+    password-reset-url: ${PASSWORD_RESET_URL:http://localhost:9090/user/reset-password}
   rabbitmq:
     exchange: notification.exchange
     routing-key: notification.event

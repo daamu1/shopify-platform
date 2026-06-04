@@ -54,6 +54,9 @@ public class AuthServiceImpl implements AuthService {
     @Value("${app.auth.email-verification-url}")
     private String emailVerificationUrl;
 
+    @Value("${app.auth.password-reset-url}")
+    private String passwordResetUrl;
+
     public AuthServiceImpl(ApplicationUserRepository userRepository,
                            RefreshTokenRepository refreshTokenRepository,
                            PasswordResetTokenRepository passwordResetTokenRepository,
@@ -185,6 +188,7 @@ public class AuthServiceImpl implements AuthService {
                 .createdAt(Instant.now())
                 .expiresAt(Instant.now().plus(AuthConstants.PASSWORD_RESET_TOKEN_MINUTES, ChronoUnit.MINUTES))
                 .build());
+        publishPasswordResetRequestedEvent(user, resetToken);
 
         return TokenRequestResponse.builder()
                 .message("Password reset token issued")
@@ -216,6 +220,7 @@ public class AuthServiceImpl implements AuthService {
 
         userRepository.save(user);
         passwordResetTokenRepository.save(resetToken);
+        publishPasswordResetCompletedEvent(user);
     }
 
     @Transactional
@@ -235,6 +240,7 @@ public class AuthServiceImpl implements AuthService {
         user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
         user.setUpdatedAt(Instant.now());
         userRepository.save(user);
+        publishPasswordChangedEvent(user);
     }
 
     @Transactional
@@ -401,9 +407,58 @@ public class AuthServiceImpl implements AuthService {
         ));
     }
 
+    private void publishPasswordResetRequestedEvent(ApplicationUser user, String resetToken) {
+        notificationEventPublisher.publish(new NotificationEvent(
+                "password_reset_requested_%s_%s".formatted(user.getUserId(), UUID.randomUUID()),
+                AuthConstants.PASSWORD_RESET_REQUESTED_EVENT,
+                String.valueOf(user.getUserId()),
+                Map.of(
+                        "email", user.getEmail(),
+                        "fullName", user.getFullName() == null ? "" : user.getFullName(),
+                        "resetToken", resetToken,
+                        "resetUrl", buildPasswordResetUrl(resetToken),
+                        "expiresInMinutes", AuthConstants.PASSWORD_RESET_TOKEN_MINUTES
+                ),
+                Instant.now()
+        ));
+    }
+
+    private void publishPasswordResetCompletedEvent(ApplicationUser user) {
+        notificationEventPublisher.publish(new NotificationEvent(
+                "password_reset_completed_%s_%s".formatted(user.getUserId(), UUID.randomUUID()),
+                AuthConstants.PASSWORD_RESET_COMPLETED_EVENT,
+                String.valueOf(user.getUserId()),
+                Map.of(
+                        "email", user.getEmail(),
+                        "fullName", user.getFullName() == null ? "" : user.getFullName(),
+                        "changedAt", Instant.now().toString()
+                ),
+                Instant.now()
+        ));
+    }
+
+    private void publishPasswordChangedEvent(ApplicationUser user) {
+        notificationEventPublisher.publish(new NotificationEvent(
+                "password_changed_%s_%s".formatted(user.getUserId(), UUID.randomUUID()),
+                AuthConstants.PASSWORD_CHANGED_EVENT,
+                String.valueOf(user.getUserId()),
+                Map.of(
+                        "email", user.getEmail(),
+                        "fullName", user.getFullName() == null ? "" : user.getFullName(),
+                        "changedAt", Instant.now().toString()
+                ),
+                Instant.now()
+        ));
+    }
+
     private String buildVerificationUrl(String verificationToken) {
         String separator = emailVerificationUrl.contains("?") ? "&" : "?";
         return emailVerificationUrl + separator + "token=" + verificationToken;
+    }
+
+    private String buildPasswordResetUrl(String resetToken) {
+        String separator = passwordResetUrl.contains("?") ? "&" : "?";
+        return passwordResetUrl + separator + "token=" + resetToken;
     }
 
     private String generateRefreshToken() {

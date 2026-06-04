@@ -30,8 +30,7 @@ public class NotificationEventPublisher {
                 return message;
             });
         } catch (AmqpException exception) {
-            log.warn("Unable to publish notification event eventId={} eventType={}",
-                    event.eventId(), event.eventType(), exception);
+            log.warn("Unable to publish notification event eventId={} eventType={}", event.eventId(), event.eventType(), exception);
         }
     }
 }

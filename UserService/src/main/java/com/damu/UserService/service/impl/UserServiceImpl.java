@@ -6,6 +6,7 @@ import com.damu.UserService.model.UserProfileResponse;
 import com.damu.UserService.model.UserRegistrationRequest;
 import com.damu.UserService.repository.ApplicationUserRepository;
 import com.damu.UserService.service.UserService;
+import com.damu.UserService.util.AuthConstants;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,8 +17,6 @@ import java.time.Instant;
 @Service
 @Log4j2
 public class UserServiceImpl implements UserService {
-
-    private static final String DEFAULT_ROLE = "CUSTOMER";
 
     private final ApplicationUserRepository applicationUserRepository;
 
@@ -72,7 +71,7 @@ public class UserServiceImpl implements UserService {
                 .authSubject(request.getAuthSubject())
                 .email(request.getEmail())
                 .fullName(request.getFullName())
-                .role(DEFAULT_ROLE)
+                .role(AuthConstants.DEFAULT_ROLE)
                 .enabled(true)
                 .emailVerified(false)
                 .accountLocked(false)
