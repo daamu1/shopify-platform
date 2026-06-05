@@ -4,7 +4,7 @@ import com.damu.userservice.config.JwtProperties;
 import com.damu.userservice.entity.ApplicationUser;
 import com.damu.userservice.model.TokenIssue;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
 import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
@@ -43,7 +43,7 @@ public class JwtTokenService {
                 .build();
 
         String token = jwtEncoder.encode(JwtEncoderParameters.from(
-                JwsHeader.with(MacAlgorithm.HS256).build(),
+                JwsHeader.with(SignatureAlgorithm.RS256).build(),
                 claims
         )).getTokenValue();
 

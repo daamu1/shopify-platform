@@ -11,8 +11,9 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
+import java.security.KeyFactory;
+import java.security.interfaces.RSAPublicKey;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -21,9 +22,10 @@ import java.util.List;
 public class JwtSecurityConfig {
 
     @Bean
-    public JwtDecoder jwtDecoder(@Value("${app.security.jwt.secret}") String secret) {
-        SecretKey secretKey = new SecretKeySpec(Base64.getDecoder().decode(secret), "HmacSHA256");
-        return NimbusJwtDecoder.withSecretKey(secretKey).build();
+    public JwtDecoder jwtDecoder(@Value("${app.security.jwt.public-key}") String publicKey) throws Exception {
+        byte[] keyBytes = Base64.getDecoder().decode(publicKey);
+        RSAPublicKey rsaPublicKey = (RSAPublicKey) KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(keyBytes));
+        return NimbusJwtDecoder.withPublicKey(rsaPublicKey).build();
     }
 
     @Bean
