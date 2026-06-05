@@ -9,11 +9,16 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
+import org.springframework.security.oauth2.core.OAuth2Error;
+import org.springframework.security.oauth2.core.OAuth2TokenValidator;
+import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
 import java.security.KeyFactory;
@@ -48,8 +53,10 @@ public class JwtConfig {
     }
 
     @Bean
-    public JwtDecoder jwtDecoder(RSAPublicKey jwtPublicKey) {
-        return NimbusJwtDecoder.withPublicKey(jwtPublicKey).build();
+    public JwtDecoder jwtDecoder(RSAPublicKey jwtPublicKey, JwtProperties jwtProperties) {
+        NimbusJwtDecoder jwtDecoder = NimbusJwtDecoder.withPublicKey(jwtPublicKey).build();
+        jwtDecoder.setJwtValidator(tokenValidator(jwtProperties.issuer(), jwtProperties.audience()));
+        return jwtDecoder;
     }
 
     @Bean
@@ -62,5 +69,13 @@ public class JwtConfig {
         jwt.getClaimAsStringList("permissions").forEach(permission -> authorities.add(new SimpleGrantedAuthority(permission)));
         jwt.getClaimAsStringList("roles").forEach(role -> authorities.add(new SimpleGrantedAuthority(role)));
         return authorities;
+    }
+
+    private OAuth2TokenValidator<Jwt> tokenValidator(String issuer, String audience) {
+        OAuth2TokenValidator<Jwt> issuerValidator = JwtValidators.createDefaultWithIssuer(issuer);
+        OAuth2TokenValidator<Jwt> audienceValidator = jwt -> jwt.getAudience().contains(audience)
+                ? OAuth2TokenValidatorResult.success()
+                : OAuth2TokenValidatorResult.failure(new OAuth2Error("invalid_token", "Missing required audience", null));
+        return new DelegatingOAuth2TokenValidator<>(issuerValidator, audienceValidator);
     }
 }
