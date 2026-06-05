@@ -1,0 +1,16 @@
+${AnsiColor.BRIGHT_GREEN}
+ ____  _   _  ___  ____ ___ _______   __
+/ ___|| | | |/ _ \|  _ \_ _|  ___\ \ / /
+\___ \| |_| | | | | |_) | || |_   \ V /
+ ___) |  _  | |_| |  __/| ||  _|   | |
+|____/|_| |_|\___/|_|  |___|_|     |_|
+${AnsiColor.BRIGHT_CYAN}
+ _   _ ____  _____ ____      ____  _____ ______     _____ ____ _____
+| | | / ___|| ____|  _ \    / ___|| ____|  _ \ \   / /_ _/ ___| ____|
+| | | \___ \|  _| | |_) |   \___ \|  _| | |_) \ \ / / | | |   |  _|
+| |_| |___) | |___|  _ <     ___) | |___|  _ < \ V /  | | |___| |___
+ \___/|____/|_____|_| \_\   |____/|_____|_| \_\ \_/  |___\____|_____|
+${AnsiColor.BRIGHT_YELLOW}
+ :: Shopify User Service :: ${spring.application.name:USER-SERVICE} :: port ${server.port:8083}
+ :: Auth | User Profile | JWT | RabbitMQ Events | Profile ${spring.profiles.active:default}
+${AnsiColor.DEFAULT}
