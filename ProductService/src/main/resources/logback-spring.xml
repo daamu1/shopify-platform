@@ -23,16 +23,16 @@
         </encoder>
     </appender>
 
-    <logger name="com.damu.PaymentService.logging.RequestLoggingFilter" level="INFO" additivity="false">
+    <logger name="com.damu.paymentservice.logging.RequestLoggingFilter" level="INFO" additivity="false">
         <appender-ref ref="HTTP_CONSOLE"/>
     </logger>
     <logger name="com.damu.ProductService.logging.RequestLoggingFilter" level="INFO" additivity="false">
         <appender-ref ref="HTTP_CONSOLE"/>
     </logger>
-    <logger name="com.damu.OrderService.logging.RequestLoggingFilter" level="INFO" additivity="false">
+    <logger name="com.damu.orderservice.logging.RequestLoggingFilter" level="INFO" additivity="false">
         <appender-ref ref="HTTP_CONSOLE"/>
     </logger>
-    <logger name="com.damu.CloudGateway.logging.GatewayLoggingFilter" level="INFO" additivity="false">
+    <logger name="com.damu.cloudgateway.logging.GatewayLoggingFilter" level="INFO" additivity="false">
         <appender-ref ref="HTTP_CONSOLE"/>
     </logger>
 
