@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 public interface PaymentService {
 
     @PostMapping
-    ApiResponse<Long> doPayment(@RequestBody PaymentRequest paymentRequest);
+        ApiResponse<Long> doPayment(@RequestBody PaymentRequest paymentRequest);
 
     default ApiResponse<Long> fallback(Exception e) {
         throw new CustomException("Payment Service is not available", "UNAVAILABLE", 500);

@@ -36,8 +36,7 @@ public class PaymentServiceImpl implements PaymentService{
 
         transactionDetailsRepository.save(transactionDetails);
 
-        log.info("Payment recorded orderId={} paymentId={} status={}",
-                transactionDetails.getOrderId(), transactionDetails.getId(), transactionDetails.getPaymentStatus());
+        log.info("Payment recorded orderId={} paymentId={} status={}", transactionDetails.getOrderId(), transactionDetails.getId(), transactionDetails.getPaymentStatus());
 
         return transactionDetails.getId();
     }
@@ -46,8 +45,7 @@ public class PaymentServiceImpl implements PaymentService{
     public PaymentResponse getPaymentDetailsByOrderId(String orderId) {
         log.info("Fetching payment details orderId={}", orderId);
 
-        TransactionDetails transactionDetails
-                = transactionDetailsRepository.findByOrderId(Long.parseLong(orderId));
+        TransactionDetails transactionDetails = transactionDetailsRepository.findByOrderId(Long.parseLong(orderId));
 
         if (transactionDetails == null) {
             log.warn("Payment details not found orderId={}", orderId);
@@ -62,8 +60,7 @@ public class PaymentServiceImpl implements PaymentService{
         .status(transactionDetails.getPaymentStatus())
         .amount(transactionDetails.getAmount())
         .build();
-        log.info("Payment details fetched orderId={} paymentId={} status={}",
-                orderId, paymentResponse.getPaymentId(), paymentResponse.getStatus());
+        log.info("Payment details fetched orderId={} paymentId={} status={}", orderId, paymentResponse.getPaymentId(), paymentResponse.getStatus());
         return paymentResponse;
     }
 }

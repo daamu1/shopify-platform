@@ -1,17 +1,19 @@
-package com.damu.paymentservice.model;
+package com.damu.orderservice.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.Instant;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class PaymentRequest {
-    private long orderId;
-    private long amount;
-    private String referenceNumber;
+public  class PaymentDetails{
+    private long paymentId;
     private PaymentMode paymentMode;
+    private String paymentStatus;
+    private Instant paymentDate;
 }

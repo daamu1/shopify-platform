@@ -15,6 +15,7 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.util.CollectionUtils;
 
 import java.security.KeyFactory;
 import java.security.interfaces.RSAPublicKey;
@@ -27,10 +28,7 @@ import java.util.List;
 public class JwtSecurityConfig {
 
     @Bean
-    public JwtDecoder jwtDecoder(
-            @Value("${app.security.jwt.public-key}") String publicKey,
-            @Value("${app.security.jwt.issuer}") String issuer,
-            @Value("${app.security.jwt.audience}") String audience) throws Exception {
+    public JwtDecoder jwtDecoder(@Value("${app.security.jwt.public-key}") String publicKey, @Value("${app.security.jwt.issuer}") String issuer, @Value("${app.security.jwt.audience}") String audience) throws Exception {
         byte[] keyBytes = Base64.getDecoder().decode(publicKey);
         RSAPublicKey rsaPublicKey = (RSAPublicKey) KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(keyBytes));
         NimbusJwtDecoder jwtDecoder = NimbusJwtDecoder.withPublicKey(rsaPublicKey).build();
@@ -46,11 +44,11 @@ public class JwtSecurityConfig {
     private List<SimpleGrantedAuthority> authorities(Jwt jwt) {
         List<SimpleGrantedAuthority> authorities = new ArrayList<>();
         List<String> permissions = jwt.getClaimAsStringList("permissions");
-        if (permissions != null) {
+        if (!CollectionUtils.isEmpty(permissions)) {
             permissions.forEach(permission -> authorities.add(new SimpleGrantedAuthority(permission)));
         }
         List<String> roles = jwt.getClaimAsStringList("roles");
-        if (roles != null) {
+        if (!CollectionUtils.isEmpty(roles)) {
             roles.forEach(role -> authorities.add(new SimpleGrantedAuthority(role)));
         }
         return authorities;

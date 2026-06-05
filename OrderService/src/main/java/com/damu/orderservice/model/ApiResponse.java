@@ -21,12 +21,7 @@ public final class ApiResponse<T> {
     private final LocalDateTime timestamp;
 
     @JsonCreator
-    private ApiResponse(boolean success,
-                        int statusCode,
-                        String message,
-                        T data,
-                        List<ApiError> errors,
-                        LocalDateTime timestamp) {
+    private ApiResponse(boolean success, int statusCode, String message, T data, List<ApiError> errors, LocalDateTime timestamp) {
         this.success = success;
         this.statusCode = statusCode;
         this.message = message;

@@ -20,8 +20,7 @@ public class PaymentController {
     @PostMapping
     @ResponseStatus(HttpStatus.OK)
     public ApiResponse<Long> doPayment(@RequestBody PaymentRequest paymentRequest) {
-        log.info("Payment request received orderId={} amount={} paymentMode={}",
-                paymentRequest.getOrderId(), paymentRequest.getAmount(), paymentRequest.getPaymentMode());
+        log.info("Payment request received orderId={} amount={} paymentMode={}", paymentRequest.getOrderId(), paymentRequest.getAmount(), paymentRequest.getPaymentMode());
         long paymentId = paymentService.doPayment(paymentRequest);
         log.info("Payment request completed orderId={} paymentId={}", paymentRequest.getOrderId(), paymentId);
         return ApiResponse.ok("Payment completed successfully", HttpStatus.OK.value(), paymentId);

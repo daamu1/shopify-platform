@@ -7,11 +7,10 @@ import com.damu.orderservice.external.client.ProductService;
 import com.damu.orderservice.external.request.PaymentRequest;
 import com.damu.orderservice.external.response.PaymentResponse;
 import com.damu.orderservice.external.response.ProductResponse;
-import com.damu.orderservice.model.ApiResponse;
-import com.damu.orderservice.model.OrderRequest;
-import com.damu.orderservice.model.OrderResponse;
+import com.damu.orderservice.model.*;
 import com.damu.orderservice.repository.OrderRepository;
 import com.damu.orderservice.service.OrderService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
@@ -20,38 +19,21 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.Instant;
-
-@Service
 @Log4j2
+@Service
+@RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService{
-
-    @Autowired
-    private OrderRepository orderRepository;
-
-    @Autowired
-    private ProductService productService;
-
-    @Autowired
-    private PaymentService paymentService;
-
-    @Autowired
-    private RestTemplate restTemplate;
+    private final OrderRepository orderRepository;
+    private final ProductService productService;
+    private final PaymentService paymentService;
+    private final RestTemplate restTemplate;
 
     @Override
     public long placeOrder(OrderRequest orderRequest) {
-
-        //Order Entity -> Save the data with Status Order Created
-        //Product Service - Block Products (Reduce the Quantity)
-        //Payment Service -> Payments -> Success-> COMPLETE, Else
-        //CANCELLED
-
-        log.info("Starting order placement productId={} quantity={} amount={} paymentMode={}",
-                orderRequest.getProductId(), orderRequest.getQuantity(), orderRequest.getTotalAmount(), orderRequest.getPaymentMode());
-
+        log.info("Starting order placement productId={} quantity={} amount={} paymentMode={}", orderRequest.getProductId(), orderRequest.getQuantity(), orderRequest.getTotalAmount(), orderRequest.getPaymentMode());
         log.info("Reducing product quantity productId={} quantity={}", orderRequest.getProductId(), orderRequest.getQuantity());
         productService.reduceQuantity(orderRequest.getProductId(), orderRequest.getQuantity());
         log.info("Product quantity reduced productId={} quantity={}", orderRequest.getProductId(), orderRequest.getQuantity());
-
         log.info("Creating order with status=CREATED productId={}", orderRequest.getProductId());
         Order order = Order.builder()
                 .amount(orderRequest.getTotalAmount())
@@ -63,7 +45,6 @@ public class OrderServiceImpl implements OrderService{
 
         order = orderRepository.save(order);
         log.info("Order persisted orderId={} status={}", order.getId(), order.getOrderStatus());
-
         log.info("Calling payment service orderId={} amount={}", order.getId(), orderRequest.getTotalAmount());
         PaymentRequest paymentRequest
                 = PaymentRequest.builder()
@@ -123,15 +104,15 @@ public class OrderServiceImpl implements OrderService{
         }
         PaymentResponse paymentResponse = paymentApiResponse.getData();
 
-        OrderResponse.ProductDetails productDetails
-                = OrderResponse.ProductDetails
+      ProductDetails productDetails
+                = ProductDetails
                 .builder()
                 .productName(productResponse.getProductName())
                 .productId(productResponse.getProductId())
                 .build();
 
-        OrderResponse.PaymentDetails paymentDetails
-                = OrderResponse.PaymentDetails
+       PaymentDetails paymentDetails
+                = PaymentDetails
                 .builder()
                 .paymentId(paymentResponse.getPaymentId())
                 .paymentStatus(paymentResponse.getStatus())

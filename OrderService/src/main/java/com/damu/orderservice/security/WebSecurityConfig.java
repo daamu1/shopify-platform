@@ -12,6 +12,7 @@ import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.web.SecurityFilterChain;
 
@@ -35,7 +36,7 @@ public class WebSecurityConfig {
             HttpSecurity http,
             Converter<Jwt, AbstractAuthenticationToken> jwtAuthenticationConverter,
             ObjectMapper objectMapper) throws Exception {
-        http.csrf(csrf -> csrf.disable())
+        http.csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(authorizeRequest -> authorizeRequest
                         .requestMatchers(DOCUMENTATION_PATHS).permitAll()
                         .anyRequest().authenticated())
@@ -54,15 +55,9 @@ public class WebSecurityConfig {
         return http.build();
     }
 
-    private void writeErrorResponse(
-            HttpServletResponse response,
-            ObjectMapper objectMapper,
-            HttpStatus status,
-            String message,
-            String errorCode) throws IOException {
+    private void writeErrorResponse(HttpServletResponse response, ObjectMapper objectMapper, HttpStatus status, String message, String errorCode) throws IOException {
         response.setStatus(status.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        objectMapper.writeValue(response.getWriter(),
-                ApiResponse.fail(message, status.value(), List.of(ApiResponse.ApiError.of(errorCode))));
+        objectMapper.writeValue(response.getWriter(), ApiResponse.fail(message, status.value(), List.of(ApiResponse.ApiError.of(errorCode))));
     }
 }

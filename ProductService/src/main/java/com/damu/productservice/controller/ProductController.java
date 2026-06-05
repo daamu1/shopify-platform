@@ -18,9 +18,9 @@ public class ProductController {
     @Autowired
     private ProductService productService;
 
-    @PreAuthorize("hasAuthority('product:create')")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasAuthority('product:create')")
     public ApiResponse<Long> addProduct(@RequestBody ProductRequest productRequest) {
         log.info("Add product request received name={} quantity={} price={}", productRequest.getName(), productRequest.getQuantity(), productRequest.getPrice());
         long productId = productService.addProduct(productRequest);
@@ -28,9 +28,9 @@ public class ProductController {
         return ApiResponse.ok("Product created successfully", HttpStatus.CREATED.value(), productId);
     }
 
-    @PreAuthorize("hasAuthority('product:read')")
     @GetMapping("/{id}")
     @ResponseStatus(HttpStatus.OK)
+    @PreAuthorize("hasAuthority('product:read')")
     public ApiResponse<ProductResponse> getProductById(@PathVariable("id") long productId) {
         log.info("Get product request received productId={}", productId);
         ProductResponse productResponse = productService.getProductById(productId);

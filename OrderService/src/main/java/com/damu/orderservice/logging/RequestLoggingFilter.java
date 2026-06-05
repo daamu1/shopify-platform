@@ -21,8 +21,7 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
     public static final String CORRELATION_ID_KEY = "correlationId";
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-            throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String correlationId = Optional.ofNullable(request.getHeader(CORRELATION_ID_HEADER))
                 .filter(value -> !value.isBlank())
                 .orElse(UUID.randomUUID().toString());
@@ -32,13 +31,10 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
         response.setHeader(CORRELATION_ID_HEADER, correlationId);
 
         try {
-            log.info("HTTP request started method={} path={} remoteAddress={}",
-                    request.getMethod(), request.getRequestURI(), request.getRemoteAddr());
+            log.info("HTTP request started method={} path={} remoteAddress={}", request.getMethod(), request.getRequestURI(), request.getRemoteAddr());
             filterChain.doFilter(request, response);
         } finally {
-            log.info("HTTP request completed method={} path={} status={} durationMs={}",
-                    request.getMethod(), request.getRequestURI(), response.getStatus(),
-                    System.currentTimeMillis() - startedAt);
+            log.info("HTTP request completed method={} path={} status={} durationMs={}", request.getMethod(), request.getRequestURI(), response.getStatus(), System.currentTimeMillis() - startedAt);
             MDC.remove(CORRELATION_ID_KEY);
         }
     }

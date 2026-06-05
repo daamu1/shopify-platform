@@ -21,8 +21,7 @@ public class ProductServiceImpl implements ProductService{
 
     @Override
     public long addProduct(ProductRequest productRequest) {
-       log.info("Creating product name={} quantity={} price={}",
-               productRequest.getName(), productRequest.getQuantity(), productRequest.getPrice());
+       log.info("Creating product name={} quantity={} price={}", productRequest.getName(), productRequest.getQuantity(), productRequest.getPrice());
 
         Product product
                 = Product.builder()
