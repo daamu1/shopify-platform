@@ -1,0 +1,16 @@
+${AnsiColor.BRIGHT_GREEN}
+ ____  _   _  ___  ____ ___ _______   __
+/ ___|| | | |/ _ \|  _ \_ _|  ___\ \ / /
+\___ \| |_| | | | | |_) | || |_   \ V /
+ ___) |  _  | |_| |  __/| ||  _|   | |
+|____/|_| |_|\___/|_|  |___|_|     |_|
+${AnsiColor.BRIGHT_CYAN}
+ ____  _____ ____ ___ ____ _____ ______   __
+|  _ \| ____/ ___|_ _/ ___|_   _|  _ \ \ / /
+| |_) |  _|| |  _ | |\___ \ | | | |_) \ V /
+|  _ <| |__| |_| || | ___) || | |  _ < | |
+|_| \_\_____\____|___|____/ |_| |_| \_\|_|
+${AnsiColor.BRIGHT_YELLOW}
+ :: Shopify Service Registry :: ${spring.application.name:SERVICE-REGISTRY} :: port ${server.port:8761}
+ :: Eureka Discovery | Profile ${spring.profiles.active:default}
+${AnsiColor.DEFAULT}

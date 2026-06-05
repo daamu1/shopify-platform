@@ -1,0 +1,16 @@
+${AnsiColor.BRIGHT_GREEN}
+ ____  _   _  ___  ____ ___ _______   __
+/ ___|| | | |/ _ \|  _ \_ _|  ___\ \ / /
+\___ \| |_| | | | | |_) | || |_   \ V /
+ ___) |  _  | |_| |  __/| ||  _|   | |
+|____/|_| |_|\___/|_|  |___|_|     |_|
+${AnsiColor.BRIGHT_CYAN}
+ ____   ___  __   ____  __ _____ _   _ _____
+|  _ \ / _ \ \ \ / /  \/  | ____| \ | |_   _|
+| |_) | | | | \ V /| |\/| |  _| |  \| | | |
+|  __/| |_| |  | | | |  | | |___| |\  | | |
+|_|    \___/   |_| |_|  |_|_____|_| \_| |_|
+${AnsiColor.BRIGHT_YELLOW}
+ :: Shopify Payment Service :: ${spring.application.name:PAYMENT-SERVICE} :: port ${server.port:8081}
+ :: Payments | Transactions | External Providers | Profile ${spring.profiles.active:default}
+${AnsiColor.DEFAULT}

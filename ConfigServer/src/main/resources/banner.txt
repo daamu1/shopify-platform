@@ -1,0 +1,16 @@
+${AnsiColor.BRIGHT_GREEN}
+ ____  _   _  ___  ____ ___ _______   __
+/ ___|| | | |/ _ \|  _ \_ _|  ___\ \ / /
+\___ \| |_| | | | | |_) | || |_   \ V /
+ ___) |  _  | |_| |  __/| ||  _|   | |
+|____/|_| |_|\___/|_|  |___|_|     |_|
+${AnsiColor.BRIGHT_CYAN}
+  ____ ___  _   _ _____ ___ ____    ____  _____ ______     _____ ____
+ / ___/ _ \| \ | |  ___|_ _/ ___|  / ___|| ____|  _ \ \   / / ____|
+| |  | | | |  \| | |_   | | |  _   \___ \|  _| | |_) \ \ / /|  _|
+| |__| |_| | |\  |  _|  | | |_| |   ___) | |___|  _ < \ V / | |___
+ \____\___/|_| \_|_|   |___\____|  |____/|_____|_| \_\ \_/  |_____|
+${AnsiColor.BRIGHT_YELLOW}
+ :: Shopify Config Server :: ${spring.application.name:CONFIG-SERVER} :: port ${server.port:9296}
+ :: Centralized Configuration | Profile ${spring.profiles.active:default}
+${AnsiColor.DEFAULT}

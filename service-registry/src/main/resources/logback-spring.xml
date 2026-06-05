@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="SERVICE-REGISTRY"/>
+
+    <property name="APP_LOG_PATTERN"
+              value="%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%-5level) %clr([%X{traceId:-},%X{spanId:-}]){magenta} %clr([correlationId=%X{correlationId:-}]){cyan} %clr([${APP_NAME}]){green} %clr(%logger{36}){blue} - %msg%n"/>
+    <property name="HTTP_LOG_PATTERN"
+              value="%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%-5level) %clr([HTTP]){cyan} %clr([%X{traceId:-},%X{spanId:-}]){magenta} %clr([correlationId=%X{correlationId:-}]){yellow} %clr([${APP_NAME}]){green} %clr(%logger{36}){cyan} => %msg%n"/>
+
+    <appender name="APP_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${APP_LOG_PATTERN}</pattern>
+            <charset>${CONSOLE_LOG_CHARSET}</charset>
+        </encoder>
+    </appender>
+
+    <appender name="HTTP_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${HTTP_LOG_PATTERN}</pattern>
+            <charset>${CONSOLE_LOG_CHARSET}</charset>
+        </encoder>
+    </appender>
+
+    <logger name="com.damu.PaymentService.logging.RequestLoggingFilter" level="INFO" additivity="false">
+        <appender-ref ref="HTTP_CONSOLE"/>
+    </logger>
+    <logger name="com.damu.ProductService.logging.RequestLoggingFilter" level="INFO" additivity="false">
+        <appender-ref ref="HTTP_CONSOLE"/>
+    </logger>
+    <logger name="com.damu.OrderService.logging.RequestLoggingFilter" level="INFO" additivity="false">
+        <appender-ref ref="HTTP_CONSOLE"/>
+    </logger>
+    <logger name="com.damu.CloudGateway.logging.GatewayLoggingFilter" level="INFO" additivity="false">
+        <appender-ref ref="HTTP_CONSOLE"/>
+    </logger>
+
+    <root level="INFO">
+        <appender-ref ref="APP_CONSOLE"/>
+    </root>
+</configuration>

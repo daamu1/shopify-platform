@@ -1,0 +1,16 @@
+${AnsiColor.BRIGHT_GREEN}
+ ____  _   _  ___  ____ ___ _______   __
+/ ___|| | | |/ _ \|  _ \_ _|  ___\ \ / /
+\___ \| |_| | | | | |_) | || |_   \ V /
+ ___) |  _  | |_| |  __/| ||  _|   | |
+|____/|_| |_|\___/|_|  |___|_|     |_|
+${AnsiColor.BRIGHT_CYAN}
+  ___  ____  ____  _____ ____
+ / _ \|  _ \|  _ \| ____|  _ \
+| | | | |_) | | | |  _| | |_) |
+| |_| |  _ <| |_| | |___|  _ <
+ \___/|_| \_\____/|_____|_| \_\
+${AnsiColor.BRIGHT_YELLOW}
+ :: Shopify Order Service :: ${spring.application.name:ORDER-SERVICE} :: port ${server.port:8082}
+ :: Orders | Checkout | Service Calls | Profile ${spring.profiles.active:default}
+${AnsiColor.DEFAULT}
