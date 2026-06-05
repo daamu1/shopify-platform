@@ -12,125 +12,108 @@ import com.damu.orderservice.repository.OrderRepository;
 import com.damu.orderservice.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import java.time.Instant;
+
 @Log4j2
 @Service
 @RequiredArgsConstructor
-public class OrderServiceImpl implements OrderService{
+public class OrderServiceImpl implements OrderService {
+
     private final OrderRepository orderRepository;
     private final ProductService productService;
     private final PaymentService paymentService;
-    private final RestTemplate restTemplate;
 
     @Override
     public long placeOrder(OrderRequest orderRequest) {
-        log.info("Starting order placement productId={} quantity={} amount={} paymentMode={}", orderRequest.getProductId(), orderRequest.getQuantity(), orderRequest.getTotalAmount(), orderRequest.getPaymentMode());
-        log.info("Reducing product quantity productId={} quantity={}", orderRequest.getProductId(), orderRequest.getQuantity());
+        log.info("Placing order productId={} quantity={} amount={} paymentMode={}", orderRequest.getProductId(), orderRequest.getQuantity(), orderRequest.getTotalAmount(), orderRequest.getPaymentMode());
         productService.reduceQuantity(orderRequest.getProductId(), orderRequest.getQuantity());
         log.info("Product quantity reduced productId={} quantity={}", orderRequest.getProductId(), orderRequest.getQuantity());
-        log.info("Creating order with status=CREATED productId={}", orderRequest.getProductId());
-        Order order = Order.builder()
-                .amount(orderRequest.getTotalAmount())
-                .orderStatus("CREATED")
-                .productId(orderRequest.getProductId())
-                .orderDate(Instant.now())
-                .quantity(orderRequest.getQuantity())
-                .build();
-
-        order = orderRepository.save(order);
+        Order order = orderRepository.save(buildOrder(orderRequest));
         log.info("Order persisted orderId={} status={}", order.getId(), order.getOrderStatus());
-        log.info("Calling payment service orderId={} amount={}", order.getId(), orderRequest.getTotalAmount());
-        PaymentRequest paymentRequest
-                = PaymentRequest.builder()
-                .orderId(order.getId())
-                .paymentMode(orderRequest.getPaymentMode())
-                .amount(orderRequest.getTotalAmount())
-                .build();
-
-        String orderStatus = null;
-        try {
-            paymentService.doPayment(paymentRequest);
-            log.info("Payment completed successfully orderId={}", order.getId());
-            orderStatus = "PLACED";
-        } catch (Exception e) {
-            log.error("Payment failed orderId={} nextStatus=PAYMENT_FAILED error={}", order.getId(), e.getMessage(), e);
-            orderStatus = "PAYMENT_FAILED";
-        }
-
-        order.setOrderStatus(orderStatus);
-        orderRepository.save(order);
-
-        log.info("Order placement completed orderId={} finalStatus={}", order.getId(), orderStatus);
-        return order.getId();
+        String finalStatus = attemptPayment(order, orderRequest);
+        Order finalOrder = orderRepository.save(order.toBuilder().orderStatus(finalStatus).build());
+        log.info("Order placement complete orderId={} status={}", finalOrder.getId(), finalOrder.getOrderStatus());
+        return finalOrder.getId();
     }
 
     @Override
     public OrderResponse getOrderDetails(long orderId) {
         log.info("Fetching order details orderId={}", orderId);
-
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> {
-                    log.warn("Order not found orderId={}", orderId);
-                    return new CustomException("Order not found for the order Id:" + orderId, "NOT_FOUND", 404);
-                });
+                .orElseThrow(() -> new CustomException("Order not found for orderId: " + orderId, "NOT_FOUND", 404));
+        ProductResponse productResponse = fetchProductDetails(order.getProductId());
+        PaymentResponse paymentResponse = fetchPaymentDetails(order.getId());
+        OrderResponse orderResponse = buildOrderResponse(order, productResponse, paymentResponse);
+        log.info("Order details fetched orderId={} status={}", orderId, orderResponse.getOrderStatus());
+        return orderResponse;
+    }
 
-        log.info("Calling product service for order details orderId={} productId={}", orderId, order.getProductId());
-        ApiResponse<ProductResponse> productApiResponse = restTemplate.exchange(
-                "http://PRODUCT-SERVICE/product/" + order.getProductId(),
-                HttpMethod.GET,
-                null,
-                new ParameterizedTypeReference<ApiResponse<ProductResponse>>() {
-                }).getBody();
-        if (productApiResponse == null || productApiResponse.getData() == null) {
-            throw new CustomException("Product details are not available", "DOWNSTREAM_ERROR", 502);
-        }
-        ProductResponse productResponse = productApiResponse.getData();
+    private Order buildOrder(OrderRequest orderRequest) {
+        return Order.builder()
+                .productId(orderRequest.getProductId())
+                .quantity(orderRequest.getQuantity())
+                .amount(orderRequest.getTotalAmount())
+                .orderStatus("CREATED")
+                .orderDate(Instant.now())
+                .build();
+    }
 
-        log.info("Calling payment service for order details orderId={}", orderId);
-        ApiResponse<PaymentResponse> paymentApiResponse = restTemplate.exchange(
-                "http://PAYMENT-SERVICE/payment/order/" + order.getId(),
-                HttpMethod.GET,
-                null,
-                new ParameterizedTypeReference<ApiResponse<PaymentResponse>>() {
-                }).getBody();
-        if (paymentApiResponse == null || paymentApiResponse.getData() == null) {
-            throw new CustomException("Payment details are not available", "DOWNSTREAM_ERROR", 502);
-        }
-        PaymentResponse paymentResponse = paymentApiResponse.getData();
-
-      ProductDetails productDetails
-                = ProductDetails
-                .builder()
-                .productName(productResponse.getProductName())
-                .productId(productResponse.getProductId())
+    private String attemptPayment(Order order, OrderRequest orderRequest) {
+        PaymentRequest paymentRequest = PaymentRequest.builder()
+                .orderId(order.getId())
+                .paymentMode(orderRequest.getPaymentMode())
+                .amount(orderRequest.getTotalAmount())
                 .build();
 
-       PaymentDetails paymentDetails
-                = PaymentDetails
-                .builder()
-                .paymentId(paymentResponse.getPaymentId())
-                .paymentStatus(paymentResponse.getStatus())
-                .paymentDate(paymentResponse.getPaymentDate())
-                .paymentMode(paymentResponse.getPaymentMode())
-                .build();
+        try {
+            paymentService.doPayment(paymentRequest);
+            log.info("Payment successful orderId={}", order.getId());
+            return "PLACED";
+        } catch (Exception e) {
+            log.error("Payment failed orderId={} error={}", order.getId(), e.getMessage(), e);
+            return "PAYMENT_FAILED";
+        }
+    }
 
-        OrderResponse orderResponse
-                = OrderResponse.builder()
+    private ProductResponse fetchProductDetails(long productId) {
+        return extractData(
+                productService.getProduct(productId),
+                "Product details unavailable for productId: " + productId
+        );
+    }
+
+    private PaymentResponse fetchPaymentDetails(long orderId) {
+        return extractData(
+                paymentService.getPaymentByOrderId(orderId),
+                "Payment details unavailable for orderId: " + orderId
+        );
+    }
+
+    private <T> T extractData(ApiResponse<T> response, String errorMessage) {
+        if (response == null || response.getData() == null) {
+            throw new CustomException(errorMessage, "DOWNSTREAM_ERROR", 502);
+        }
+        return response.getData();
+    }
+
+    private OrderResponse buildOrderResponse(Order order, ProductResponse product, PaymentResponse payment) {
+        return OrderResponse.builder()
                 .orderId(order.getId())
                 .orderStatus(order.getOrderStatus())
                 .amount(order.getAmount())
                 .orderDate(order.getOrderDate())
-                .productDetails(productDetails)
-                .paymentDetails(paymentDetails)
+                .productDetails(ProductDetails.builder()
+                        .productId(product.getProductId())
+                        .productName(product.getProductName())
+                        .build())
+                .paymentDetails(PaymentDetails.builder()
+                        .paymentId(payment.getPaymentId())
+                        .paymentStatus(payment.getStatus())
+                        .paymentDate(payment.getPaymentDate())
+                        .paymentMode(payment.getPaymentMode())
+                        .build())
                 .build();
-
-        log.info("Order details fetched orderId={} status={}", orderId, orderResponse.getOrderStatus());
-        return orderResponse;
     }
 }
