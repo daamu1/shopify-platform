@@ -9,7 +9,7 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.damu</groupId>
-	<artifactId>service-registry</artifactId>
+	<artifactId>ServiceRegistry</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>service-registry</name>
 	<description>Demo project for Spring Boot</description>
