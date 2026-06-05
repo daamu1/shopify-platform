@@ -1,9 +1,9 @@
-package com.damu.ProductService.controller;
+package com.damu.productservice.controller;
 
-import com.damu.ProductService.model.ApiResponse;
-import com.damu.ProductService.model.ProductRequest;
-import com.damu.ProductService.model.ProductResponse;
-import com.damu.ProductService.service.ProductService;
+import com.damu.productservice.model.ApiResponse;
+import com.damu.productservice.model.ProductRequest;
+import com.damu.productservice.model.ProductResponse;
+import com.damu.productservice.service.ProductService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

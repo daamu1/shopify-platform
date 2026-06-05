@@ -1,4 +1,4 @@
-package com.damu.ProductService;
+package com.damu.productservice;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

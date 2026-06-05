@@ -1,4 +1,4 @@
-package com.damu.ProductService;
+package com.damu.productservice;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

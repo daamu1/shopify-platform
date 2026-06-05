@@ -1,6 +1,6 @@
-package com.damu.ProductService.exception;
+package com.damu.productservice.exception;
 
-import com.damu.ProductService.model.ApiResponse;
+import com.damu.productservice.model.ApiResponse;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;

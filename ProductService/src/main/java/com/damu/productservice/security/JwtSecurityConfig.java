@@ -1,4 +1,4 @@
-package com.damu.ProductService.security;
+package com.damu.productservice.security;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;

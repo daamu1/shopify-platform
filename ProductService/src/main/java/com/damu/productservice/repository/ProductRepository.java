@@ -1,6 +1,6 @@
-package com.damu.ProductService.repository;
+package com.damu.productservice.repository;
 
-import com.damu.ProductService.entity.Product;
+import com.damu.productservice.entity.Product;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

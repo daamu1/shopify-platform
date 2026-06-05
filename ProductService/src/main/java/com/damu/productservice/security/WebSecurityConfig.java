@@ -1,6 +1,6 @@
-package com.damu.ProductService.security;
+package com.damu.productservice.security;
 
-import com.damu.ProductService.model.ApiResponse;
+import com.damu.productservice.model.ApiResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;

@@ -1,4 +1,4 @@
-package com.damu.ProductService.exception;
+package com.damu.productservice.exception;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;

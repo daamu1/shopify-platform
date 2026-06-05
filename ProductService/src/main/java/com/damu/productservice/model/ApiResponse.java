@@ -1,4 +1,4 @@
-package com.damu.ProductService.model;
+package com.damu.productservice.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;

@@ -1,4 +1,4 @@
-package com.damu.ProductService.config;
+package com.damu.productservice.config;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;

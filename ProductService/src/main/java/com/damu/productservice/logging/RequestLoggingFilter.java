@@ -1,4 +1,4 @@
-package com.damu.ProductService.logging;
+package com.damu.productservice.logging;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

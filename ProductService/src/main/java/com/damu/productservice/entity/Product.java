@@ -1,4 +1,4 @@
-package com.damu.ProductService.entity;
+package com.damu.productservice.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

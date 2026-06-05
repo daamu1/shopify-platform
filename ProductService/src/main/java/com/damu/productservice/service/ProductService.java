@@ -1,7 +1,7 @@
-package com.damu.ProductService.service;
+package com.damu.productservice.service;
 
-import com.damu.ProductService.model.ProductRequest;
-import com.damu.ProductService.model.ProductResponse;
+import com.damu.productservice.model.ProductRequest;
+import com.damu.productservice.model.ProductResponse;
 
 public interface ProductService {
     long addProduct(ProductRequest productRequest);
